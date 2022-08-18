@@ -1,6 +1,8 @@
 from enum import Enum
 import CoolProp as cp
 import reaktoro as rkt
+import thermofun as fun
+
 import copy
 
 
@@ -323,35 +325,40 @@ class CoolPropProperties(PropertyModel):
 
     def calc(self, phase, P, T):
 
-        if len(phase.components) == 1:
-            # do a single component calculation
-            pass
-        else:
-            # may need something to check that the BIC data exists.
-            components = ""
-            mass_fracs = []
-            for i in range(len(phase.components)):
-                components += phase.components[i] + "&"
+        # check if components are present in significant quantities and create the corresponding
+        # composition input for CoolProp
+
+        components = ""
+        mass_fracs = []
+        for i in range(len(phase.components)):
+            if phase.massfrac[i] > 1e-6:
+                components += phase.components[i].value.alias["CP"] + "&"
                 mass_fracs.append(phase.massfrac[i])
-            components = components[:-1]
+        components = components[:-1]
 
-            print(components)
+        if not components:
+            # no components in significant quantities
+            return
 
-            calc = cp.AbstractState("?", components)
+        calc = cp.AbstractState("?", components)
+
+        if len(components) > 1:
+            # may need something to check that the BIC data exists.
+
             calc.set_mass_fractions(mass_fracs)
 
-            calc.update(cp.PT_INPUTS, self.Pref, self.Tref)
-            h0 = calc.hmass()
-            s0 = calc.smass()
+        calc.update(cp.PT_INPUTS, self.Pref, self.Tref)
+        h0 = calc.hmass()
+        s0 = calc.smass()
 
-            calc.update(cp.PT_INPUTS, P, T)
-            props = {"P": calc.P(),
-                     "T": calc.T(),
-                     "h": (calc.hmass() - h0) / 1e3,
-                     "s": (calc.smass() - s0)/ 1e3,
-                     "rho": calc.rhomass()
-                     }
-            return props
+        calc.update(cp.PT_INPUTS, P, T)
+        props = {"P": calc.p(),
+                 "T": calc.T(),
+                 "h": (calc.hmass() - h0) / 1e3,
+                 "s": (calc.smass() - s0)/ 1e3,
+                 "rho": calc.rhomass()
+                 }
+        return props
 
 
 class Fluid:
@@ -444,3 +451,4 @@ class Fluid:
             pass
 
         return self
+
