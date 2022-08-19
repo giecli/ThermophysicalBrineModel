@@ -51,7 +51,13 @@ class Phase:
         self.entropy = None
         self.volume = None
         self.density = None
-        self.props = None
+        self.props = {"P": 0,
+                      "T": 0,
+                      "h": 0,
+                      "s": 0,
+                      "rho": 0,
+                      "m": 0
+                      }
 
         self.up_to_date = True
 
@@ -82,14 +88,20 @@ class Phase:
         total_mass = sum(self.mass.values())
         total_moles = sum(self.moles.values())
 
-        self.massfrac = [self.mass[self.components[i]] / total_mass for i in range(len(self.components))]
-        self.molefrac = [self.moles[self.components[i]] / total_moles for i in range(len(self.components))]
+        self.massfrac = [self.mass[self.components[i]] / (total_mass + 1e-6) for i in range(len(self.components))]
+        self.molefrac = [self.moles[self.components[i]] / (total_moles +1e-6) for i in range(len(self.components))]
 
         self.enthalpy = None
         self.entropy = None
         self.volume = None
         self.density = None
-        self.props = None
+        self.props = {"P": 0,
+                      "T": 0,
+                      "h": 0,
+                      "s": 0,
+                      "rho": 0,
+                      "m": 0
+                      }
 
         self.up_to_date = True
 
@@ -161,6 +173,8 @@ class Species:
 
 class Comp(Enum):
 
+    # TODO generate for all CP and Reaktoro Species
+
     STEAM = Species("H2O(g)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.GASEOUS)
     WATER = Species("H2O(aq)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.AQUEOUS)
     Na_plus = Species("Na+", None, ["Na"], 0.02298977, +1, PhaseType.AQUEOUS)
@@ -218,6 +232,21 @@ class PartitionModels(Enum):
     REAKTORO = "reaktoro"
 
 
+class UserPartitionOptions:
+
+    pass
+
+
+class ReaktoroPartitionOptions:
+
+    pass
+
+
+class PartitionModelOptions:
+    UserEntered = UserPartitionOptions()
+    Reaktor = ReaktoroPartitionOptions()
+
+
 class PartitionModel:
 
     def __new__(cls, fluid, P, T):
@@ -240,7 +269,7 @@ class UserPartition(PartitionModel):
 
 class ReaktoroPartition(PartitionModel):
 
-    # Need to make it so that the user can set up the Reaktoro calculation
+    # TODO Need to make it so that the user can set up the Reaktoro calculation
     # themselves (i.e. enabling specific activity models etc.)
 
     def calc(self, fluid, P, T):
@@ -352,12 +381,17 @@ class ThermoFunUtils:
 
 class ThermoFunProperties(PropertyModel):
 
+    # TODO need to improve the way the user selects the database
+    # TODO check if the databases use a common naming convention
+
     database = ThermoFunUtils.Databases.SLOP98INORGANIC
 
     def calc(self, phase, P, T):
 
         database = ThermoFunUtils.home_dir + "/" + self.database.value
         engine = fun.ThermoEngine(database)
+
+        props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0}
 
         enthalpy = 0
         entropy = 0
@@ -375,25 +409,27 @@ class ThermoFunProperties(PropertyModel):
 
                 calc.update(cp.PT_INPUTS, P, T)
 
-                enthalpy += (calc.hmass() - h0) / 1e3
-                entropy += (calc.smass() - s0) / 1e3
+                enthalpy += phase.mass[comp] * (calc.hmass() - h0) / 1e3
+                entropy += phase.mass[comp] * (calc.smass() - s0) / 1e3
                 volume += phase.mass[comp] / calc.rhomass()
 
             elif phase.massfrac[i] > 1e-6:
                 properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])
                 properties0 = engine.thermoPropertiesSubstance(self.Tref, self.Pref, comp.value.alias["RKT"])
 
-                enthalpy += (properties.enthalpy.val - properties0.enthalpy.val) / 1e3
-                entropy += (properties.entropy.val - properties0.entropy.val) / 1e3
+                enthalpy += phase.mass[comp] * (properties.enthalpy.val - properties0.enthalpy.val) / 1e3
+                entropy += phase.mass[comp] * (properties.entropy.val - properties0.entropy.val) / 1e3
                 if properties.volume.val > 0:
                     volume += properties.volume.val * phase.mass[comp]
 
-        props = {"P": P,
-                 "T": T,
-                 "h": enthalpy,
-                 "s": entropy,
-                 "rho": sum([phase.mass[i] for i in phase.mass]) / (volume + 1e-6)
-                 }
+        total_mass = sum([phase.mass[i] for i in phase.mass])
+
+        props["P"] = P
+        props["T"] = T
+        props["h"] = enthalpy/total_mass
+        props["s"] = entropy/total_mass
+        props["rho"] = total_mass / (volume + 1e-6)
+        props["m"] = total_mass
 
         return props
 
@@ -405,6 +441,8 @@ class CoolPropProperties(PropertyModel):
         # check if components are present in significant quantities and create the corresponding
         # composition input for CoolProp
 
+        props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0}
+
         components = ""
         mass_fracs = []
         for i in range(len(phase.components)):
@@ -413,28 +451,28 @@ class CoolPropProperties(PropertyModel):
                 mass_fracs.append(phase.massfrac[i])
         components = components[:-1]
 
-        if not components:
-            # no components in significant quantities
-            return
+        if components:
+            calc = cp.AbstractState("?", components)
 
-        calc = cp.AbstractState("?", components)
+            if len(components) > 1:
+                # may need something to check that the BIC data exists.
 
-        if len(components) > 1:
-            # may need something to check that the BIC data exists.
+                calc.set_mass_fractions(mass_fracs)
 
-            calc.set_mass_fractions(mass_fracs)
+            calc.update(cp.PT_INPUTS, self.Pref, self.Tref)
+            h0 = calc.hmass()
+            s0 = calc.smass()
 
-        calc.update(cp.PT_INPUTS, self.Pref, self.Tref)
-        h0 = calc.hmass()
-        s0 = calc.smass()
+            calc.update(cp.PT_INPUTS, P, T)
+            total_mass = sum([phase.mass[i] for i in phase.mass])
 
-        calc.update(cp.PT_INPUTS, P, T)
-        props = {"P": calc.p(),
-                 "T": calc.T(),
-                 "h": (calc.hmass() - h0) / 1e3,
-                 "s": (calc.smass() - s0)/ 1e3,
-                 "rho": calc.rhomass()
-                 }
+            props["P"] = calc.p()
+            props["T"] = calc.T()
+            props["h"] = (calc.hmass() - h0) / 1e3
+            props["s"] = (calc.smass() - s0)/ 1e3
+            props["rho"] = calc.rhomass()
+            props["m"] = total_mass
+
         return props
 
 
@@ -490,12 +528,16 @@ class Fluid:
             self.total.add_component(comp, mass, moles, update=False)
             if phase == PhaseType.AQUEOUS:
                 self.aqueous.add_component(comp, mass, moles, update=False)
+                self.total.phases[PhaseType.AQUEOUS] = self.aqueous
             elif phase == PhaseType.LIQUID:
                 self.liquid.add_component(comp, mass, moles, update=False)
+                self.total.phases[PhaseType.liquid] = self.liquid
             elif phase == PhaseType.GASEOUS:
                 self.gaseous.add_component(comp, mass, moles, update=False)
+                self.total.phases[PhaseType.GASEOUS] = self.gaseous
             elif phase == PhaseType.MINERAL:
                 self.mineral.add_component(comp, mass, moles, update=False)
+                self.total.phases[PhaseType.MINERAL] = self.mineral
 
             # update the total charge imbalance
             charge += moles * comp.value.charge
@@ -519,13 +561,55 @@ class Fluid:
             self.aqueous.props = self.property_models[PropertyModels.THERMOFUN](self.aqueous, P, T)
 
         if len(self.liquid.components) > 0:
-            pass
+            # TODO this need some improvement... probably best to calculate them each individually
+            self.liquid.props = self.property_models[PropertyModels.COOLPROP](self.liquid, P, T)
 
         if len(self.gaseous.components) > 0:
             self.gaseous.props = self.property_models[PropertyModels.COOLPROP](self.gaseous, P, T)
 
         if len(self.mineral.components) > 0:
-            pass
+            self.mineral.props = self.property_models[PropertyModels.THERMOFUN](self.mineral, P, T)
 
+        enthalpy = 0
+        entropy = 0
+        volume = 0.
+        mass = 0
+        for phase in self.total.phases:
+            phase = self.total.phases[phase]
+            enthalpy += phase.props["h"] * phase.props["m"]
+            entropy += phase.props["s"] * phase.props["m"]
+            volume += phase.props["h"] * phase.props["m"]
+            mass += phase.props["m"]
+
+        total_mass = sum([self.total.mass[i] for i in self.total.mass])
+        if (total_mass - mass)/total_mass > 1e-3:
+            raise Error("The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass)/total_mass))
+
+        self.total.props = {"P": P,
+                            "T": T,
+                            "h": enthalpy / total_mass,
+                            "s": entropy / total_mass,
+                            "rho": total_mass / (volume + 1e-6),
+                            "m": total_mass
+                            }
         return self
+
+    def promotePhaseToFluid(self, phase):
+        # TODO
+        pass
+
+    def addComponent(self, component, composition):
+        # TODO
+        pass
+
+    def addComponents(self, components, composition):
+        # TODO
+        pass
+
+    @staticmethod
+    def blendFluids(fluid):
+        # TODO
+        pass
+
+    # TODO something to print the Fluid, underlying phases and properties
 
