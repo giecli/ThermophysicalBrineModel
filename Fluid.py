@@ -1,89 +1,141 @@
+import copy
+
 from Phases import *
 from Components import Comp
 from ErrorHandling import Error, InputError
 
 
 class Fluid:
+    # TODO implement check at the calculation level that there is no charge imbalance
 
-    def __init__(self, components, composition):
+    def __init__(self, components=None, composition=None):
 
-        # check that same number of components and compositions have been entered
-        if len(components) != len(composition):
-            raise InputError("\n\nThe number of components and compositions provided is not the same")
-
-        # check that all components exist within the database
-        bad_components = [comp for comp in components if type(comp) != Comp]
-        if bad_components:
-            message = "\n\nThe following components do not exist in the database:\n"
-            for comp in bad_components:
-                message = message + "\t{}\n".format(comp)
-            message = message + "\nPlease check spelling or add components to the database"
-
-            raise InputError(message)
-
-        # check that all compositions have been entered in the right format
-        bad_composition = [components[i] for i in range(len(composition)) if type(composition[i]) not in [int, float]]
-        if bad_composition:
-            message = "\n\nThe following composition(s) are incorrectly formatted (int or float expected):\n"
-            for comp in bad_composition:
-                message = message + "\t{}\n".format(comp)
-            message = message + "\nPlease check input compositions"
-
-            raise InputError(message)
-
-        # the components and compositions are valid, now add them to the respective phases
         self.total = TotalPhase()
         self.aqueous = AqueousPhase()
         self.liquid = LiquidPhase()
         self.gaseous = GaseousPhase()
         self.mineral = MineralPhase()
 
-        charge = 0
+        if components is not None and composition is not None:
+            self.addComponents(components, composition)
+
+    def addComponent(self, component, composition, update=True):
+
+        # check that all components exist within the database
+        if type(component) != Comp:
+            message = "\n\nThe component '{}' does not exist in the database\n".format(component)
+            raise InputError(message)
+
+        if type(composition) not in [int, float]:
+            message = "\n\nThe composition of component '{}' is incorrectly formatted (int or float expected)\n".format(component)
+            raise InputError(message)
+
+        comp = component
+        mass = composition
+        moles = mass / comp.value.Mr
+        phase = comp.value.phase
+
+        # add the component to the respective phase
+        self.total.add_component(comp, mass, moles, update=update)
+
+        if phase == PhaseType.AQUEOUS:
+            self.aqueous.add_component(comp, mass, moles, update=update)
+            self.total.phases[PhaseType.AQUEOUS] = self.aqueous
+
+            return
+
+        if phase == PhaseType.LIQUID:
+            self.liquid.add_component(comp, mass, moles, update=update)
+            self.total.phases[PhaseType.LIQUID] = self.liquid
+
+            return
+
+        if phase == PhaseType.GASEOUS:
+            self.gaseous.add_component(comp, mass, moles, update=update)
+            self.total.phases[PhaseType.GASEOUS] = self.gaseous
+
+            return
+
+        if phase == PhaseType.MINERAL:
+            self.mineral.add_component(comp, mass, moles, update=update)
+            self.total.phases[PhaseType.MINERAL] = self.mineral
+
+            return
+
+        raise Error("\n\nThe component's native phase is not recognised")
+
+    def addComponents(self, components, composition):
+
+        if len(components) != len(composition):
+            raise InputError("\n\nThe number of components and compositions provided is not the same")
+
         for i in range(len(components)):
-            comp = components[i]
-            mass = composition[i]
-            moles = mass / comp.value.Mr
-            phase = comp.value.phase
 
-            # add the component to the respective phase
-            self.total.add_component(comp, mass, moles, update=False)
-            if phase == PhaseType.AQUEOUS:
-                self.aqueous.add_component(comp, mass, moles, update=False)
-                self.total.phases[PhaseType.AQUEOUS] = self.aqueous
-            elif phase == PhaseType.LIQUID:
-                self.liquid.add_component(comp, mass, moles, update=False)
-                self.total.phases[PhaseType.liquid] = self.liquid
-            elif phase == PhaseType.GASEOUS:
-                self.gaseous.add_component(comp, mass, moles, update=False)
-                self.total.phases[PhaseType.GASEOUS] = self.gaseous
-            elif phase == PhaseType.MINERAL:
-                self.mineral.add_component(comp, mass, moles, update=False)
-                self.total.phases[PhaseType.MINERAL] = self.mineral
+            self.addComponent(components[i], composition[i], update=False)
 
-            # update the total charge imbalance
-            charge += moles * comp.value.charge
-
-        # re-calculte the component mass and mole fractions
+        # re-calculate the component mass and mole fractions
         self.total.update()
         self.liquid.update()
         self.aqueous.update()
         self.gaseous.update()
         self.mineral.update()
 
-        if abs(charge) > 1e-3:
-            raise InputError("\n\nThe fluid is not charge balanced. The charge imbalance is {}".format(charge))
+    def promotePhaseToFluid(self, phaseType):
 
-    def promotePhaseToFluid(self, phase):
-        # TODO
-        pass
+        if type(phaseType) == PhaseType.TOTAL:
+            return copy.deepcopy(self)
 
-    def addComponent(self, component, composition):
-        # TODO
-        pass
+        phase = self.total.phases[phaseType]
+        components = [i for i in phase.components]
+        composition = [phase.mass[i] for i in components]
 
-    def addComponents(self, components, composition):
-        # TODO
-        pass
+        newFluid = Fluid(components=components, composition=composition)
+
+        newFluid.total.props = copy.deepcopy(phase.props)
+        newFluid.total.phases[phaseType].props = copy.deepcopy(phase.props)
+
+        return newFluid
+
+    def promotePhasesToFluid(self, phaseTypes):
+
+        if PhaseType.TOTAL in phaseTypes:
+            return copy.deepcopy(self)
+
+        phases = {}
+        components = []
+        composition = []
+        for phaseType in phaseTypes:
+            phase = self.total.phases[phaseType]
+            phases[phaseType] = phase
+            components = components + [i for i in phase.components]
+            composition = composition + [phase.mass[i] for i in phase.components]
+
+        newFluid = Fluid(components=components, composition=composition)
+
+        enthalpy = 0
+        entropy = 0
+        volume = 0
+        P = 0
+        T = 0
+        for phaseType in phaseTypes:
+            newFluid.total.phases[phaseType].props = copy.deepcopy(phases[phaseType].props)
+
+            enthalpy += phases[phaseType].props["h"] * phases[phaseType].props["m"]
+            entropy += phases[phaseType].props["s"] * phases[phaseType].props["m"]
+            volume += phases[phaseType].props["m"] / (phases[phaseType].props["rho"] + 1e-6)
+
+            P = phases[phaseType].props["P"]
+            T = phases[phaseType].props["T"]
+
+        total_mass = sum([newFluid.total.mass[i] for i in newFluid.total.mass])
+        newFluid.total.props["P"] = P
+        newFluid.total.props["T"] = T
+        newFluid.total.props["h"] = enthalpy / total_mass
+        newFluid.total.props["s"] = entropy / total_mass
+        newFluid.total.props["rho"] = total_mass / (volume + 1e-6)
+        newFluid.total.props["m"] = total_mass
+
+        return newFluid
 
     @staticmethod
     def blendFluids(fluid):

@@ -296,7 +296,7 @@ class ReaktoroPartition(PartitionModel):
 
         res = rkt.equilibrate(state)
 
-        state.output("test.txt")
+        # state.output("test.txt")
 
         props = rkt.ChemicalProps(state)
         # need to extract some properties I guess

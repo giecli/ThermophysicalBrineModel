@@ -43,7 +43,7 @@ class ReaktoroPartition:
 
         res = rkt.equilibrate(state)
 
-        state.output("test.txt")
+        # state.output("test.txt")
 
         props = rkt.ChemicalProps(state)
         # need to extract some properties I guess
@@ -71,5 +71,5 @@ class ReaktoroPartition:
                 composition.append(masses[i][j])
 
         # now need to build a new fluid from this
-        return Fluid(components, composition)
+        return Fluid(components=components, composition=composition)
 
