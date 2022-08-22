@@ -1,5 +1,5 @@
 from Fluid import Fluid
-from Components import Comp
+from Databases import Comp
 from PartitionModel import Partition
 from PropertyModel import PropertyModel
 from Phases import PhaseType

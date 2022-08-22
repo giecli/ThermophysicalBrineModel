@@ -1,5 +1,5 @@
 from ThermoFunPropertyModel import ThermoFunProperties, ThermoFunPropertyOptions
-from CoolPropPropertyModel_old import CoolPropProperties, CoolPropPropertyOptions
+from CoolPropPropertyModel import CoolPropProperties, CoolPropPropertyOptions
 from ErrorHandling import Error
 
 from enum import Enum

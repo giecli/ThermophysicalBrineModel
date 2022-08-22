@@ -1,4 +1,4 @@
-from Components import Comp
+from Databases import Comp
 from Constants import *
 
 from enum import Enum

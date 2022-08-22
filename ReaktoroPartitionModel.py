@@ -1,5 +1,5 @@
 from Phases import PhaseType
-from Components import Databases
+from Databases import LookUp
 from ErrorHandling import Error
 from Fluid import Fluid
 
@@ -22,6 +22,7 @@ class ReaktoroPartition:
         # TODO something to consider the selected Reaktoro options
 
         db = rkt.SupcrtDatabase('supcrtbl')
+        db_look_up = LookUp()
 
         elements = ""
         for i in fluid.total.elements:
@@ -60,7 +61,7 @@ class ReaktoroPartition:
             else:
                 raise Error("\n\n Invalid phase encountered")
 
-            species[key] = [Databases().withReaktoroName(i.name()) for i in phase.species().data()]
+            species[key] = [db_look_up.withReaktoroName(i.name()) for i in phase.species().data()]
             masses[key] = [state.speciesMass(i.name())[0] for i in phase.species().data()]
 
         components = []

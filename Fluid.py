@@ -1,7 +1,7 @@
 import copy
 
 from Phases import *
-from Components import Comp
+from Databases import Comp
 from ErrorHandling import Error, InputError
 
 

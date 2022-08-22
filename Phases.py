@@ -7,6 +7,7 @@ class PhaseType(Enum):
     GASEOUS = "gaseous"
     MINERAL = "mineral"
     TOTAL = "total"
+    ELEMENT = "element"
     NONE = "none"
 
 

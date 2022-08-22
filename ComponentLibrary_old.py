@@ -174,9 +174,20 @@ class Species:
 class Comp(Enum):
 
     # TODO generate for all CP and Reaktoro Species
-
+    # these species exist in both CoolProp and Reaktoro
     STEAM = Species("H2O(g)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.GASEOUS)
     WATER = Species("H2O(aq)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.AQUEOUS)
+    HYDROGEN = Species("H2(g)", "Hydrogen", ["H"], 0.002, +0, PhaseType.GASEOUS)
+    OXYGEN = Species("O2(g)", "Oxygen", ["O"], 0.032, +0, PhaseType.GASEOUS)
+    AMMONIA = Species("NH3", "Ammonia", ["N", "H"], 0.0180385, +0, PhaseType.AQUEOUS)
+    CARBONDIOXIDE = Species("CO2(g)", "CarbonDioxide", ["C", "O"], 0.0440096, +0, PhaseType.GASEOUS)
+    NITROGEN = "Nitrogen"
+    H2S = "HydrogenSulfide"
+    HELIUM = "Helium"
+    ARGON = "Argon"
+    METHANE = "Methane"
+
+    # these are the Reaktoro only species
     Na_plus = Species("Na+", None, ["Na"], 0.02298977, +1, PhaseType.AQUEOUS)
     Cl_minus = Species("Cl-", None, ["Cl"], 0.03545300, -1, PhaseType.AQUEOUS)
     H_plus = Species("H+", None, ["H"], 0.001, +1, PhaseType.AQUEOUS)
@@ -185,8 +196,6 @@ class Comp(Enum):
     O2_aq = Species("O2(aq)", None, ["O"], 0.032, +0, PhaseType.AQUEOUS)
     OH_minus = Species("OH-", None, ["H", "O"], 0.017, +1, PhaseType.AQUEOUS)
     H2O2_aq = Species("H2O2(aq)", None, ["H", "O"], 0.034, +0, PhaseType.AQUEOUS)
-    HYDROGEN = Species("H2(g)", "Hydrogen", ["H"], 0.002, +0, PhaseType.GASEOUS)
-    OXYGEN = Species("O2(g)", "Oxygen", ["O"], 0.032, +0, PhaseType.GASEOUS)
 
 
 class Databases:
