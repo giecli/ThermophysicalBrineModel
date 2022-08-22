@@ -48,7 +48,6 @@ class ThermoFunUtils:
 class ThermoFunProperties:
 
     # TODO need to improve the way the user selects the database
-    # TODO check if the databases use a common naming convention
 
     @staticmethod
     def calc(phase, P, T, options):

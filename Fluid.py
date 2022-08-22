@@ -6,7 +6,6 @@ from ErrorHandling import Error, InputError
 
 
 class Fluid:
-    # TODO implement check at the calculation level that there is no charge imbalance
 
     def __init__(self, components=None, composition=None):
 

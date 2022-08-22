@@ -25,9 +25,9 @@ class PropertyModel:
         if len(fluid.aqueous.components) > 0:
             fluid.aqueous.props = PropertyModels.THERMOFUN.value.calc(fluid.aqueous, P, T, self.options)
 
-        if len(fluid.liquid.components) > 0:
-            # TODO this need some improvement... probably best to calculate them each individually
-            fluid.liquid.props = PropertyModels.COOLPROP.value.calc(fluid.liquid, P, T, self.options)
+        # currently there are is no liquid phase soooo
+        # if len(fluid.liquid.components) > 0:
+        #     fluid.liquid.props = PropertyModels.COOLPROP.value.calc(fluid.liquid, P, T, self.options)
 
         if len(fluid.gaseous.components) > 0:
             fluid.gaseous.props = PropertyModels.COOLPROP.value.calc(fluid.gaseous, P, T, self.options)

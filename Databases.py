@@ -5,7 +5,6 @@ from enum import Enum
 
 
 class Comp(Enum):
-    # TODO generate for all CP and Reaktoro Species
     # these species exist in both CoolProp and Reaktoro
     STEAM = Species("H2O(g)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.GASEOUS)
     WATER = Species("H2O(aq)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.AQUEOUS)
@@ -24,14 +23,14 @@ class Comp(Enum):
     C2H4_g = Species("C2H4(g)", "Ethylene", ["C", "H"], 0.028053159999999997, +0, PhaseType.GASEOUS)
     H2_g = Species("H2(g)", "Hydrogen", ["H"], 0.0020158800000000003, +0, PhaseType.GASEOUS)
     He_g = Species("He(g)", "Helium", ["He"], 0.004002602, +0, PhaseType.GASEOUS)
-    S2_g = Species("S2(g)", None, ["S"], 0.06412999999999999, +0, PhaseType.GASEOUS)
     SO2_g = Species("SO2(g)", "SulfurDioxide", ["S", "O"], 0.0640638, +0, PhaseType.GASEOUS)
-
-    # reaktoro gaseous species
     Kr_g = Species("Kr(g)", "Krypton", ["Kr"], 0.083798, +0, PhaseType.GASEOUS)
     Ne_g = Species("Ne(g)", "Neon", ["Ne"], 0.020179700000000002, +0, PhaseType.GASEOUS)
-    Rn_g = Species("Rn(g)", None, ["Rn"], 0.222, +0, PhaseType.GASEOUS)
     Xe_g = Species("Xe(g)", "Xenon", ["Xe"], 0.131293, +0, PhaseType.GASEOUS)
+
+    # reaktoro gaseous species
+    Rn_g = Species("Rn(g)", None, ["Rn"], 0.222, +0, PhaseType.GASEOUS)
+    S2_g = Species("S2(g)", None, ["S"], 0.06412999999999999, +0, PhaseType.GASEOUS)
 
     # reaktoro ions
     Ag_CO3_minus = Species("Ag(CO3)-", None, ["Ag", "C", "O"], 0.1678771, -1, PhaseType.AQUEOUS)

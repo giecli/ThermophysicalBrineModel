@@ -5,21 +5,24 @@ from enum import Enum
 
 
 class PartitionModelOptions:
-    UserEntered = UserPartitionOptions()
-    Reaktor = ReaktoroPartitionOptions()
 
+    class PartitionModels(Enum):
+        USER_ENTERED = UserPartition
+        REAKTORO = ReaktoroPartition
 
-class PartitionModels(Enum):
-    USER_ENTERED = UserPartition
-    REAKTORO = ReaktoroPartition
+    def __init__(self):
+        self.model = self.PartitionModels.REAKTORO
+
+        self.UserEntered = UserPartitionOptions()
+        self.Reaktoro = ReaktoroPartitionOptions()
 
 
 class Partition:
 
-    def __init__(self, model=PartitionModels.REAKTORO, options=PartitionModelOptions()):
+    def __init__(self, options=PartitionModelOptions()):
 
-        self.partitionModel = model
         self.options = options
+        self.partitionModel = options.model
 
     def calc(self, fluid, P, T):
 
