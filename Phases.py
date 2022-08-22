@@ -11,6 +11,82 @@ class PhaseType(Enum):
     NONE = "none"
 
 
+class PhaseProperties:
+    """
+        The Stream subclass summarises the properties of a given phase
+
+        Attributes
+        ----------
+        P: int, float
+            the phase pressure in MPa
+        T: int, float
+            the phase temperature in K
+        h: int, float
+            the phase specific enthalpy in kJ/kg
+        s: int, float
+            the phase specific entropy in kJ/kg/K
+        rho: int, float
+            the phase density in kg/m3
+        m: int, float
+            the total mass of this phase
+
+        Methods
+        -------
+        __init__(phase_type, props)
+        __getitem__(item)
+        __str__()
+
+    """
+
+    def __init__(self, props):
+        """
+        Initialises the Stream object
+
+        Parameters
+        ----------
+        props: Dict
+            dictionary of the fluid properties
+
+        """
+        # creates a variable for each of the items in props
+        vars = (i for i in props)  # plus plenty more
+
+        # assigns the value to each property
+        for i in vars:
+            setattr(self, i, props[i])
+
+    def __getitem__(self, item: str):
+        """
+        Allows the property to be retrieved by either "Stream.xzy" or "Stream["xyz"]
+
+        Parameters
+        ----------
+        item: str
+            the name of the property to return. Valid properties as p, t, h, s, x, rho, phase, fluid for now
+
+        Returns
+        -------
+        float, int
+        """
+
+        item = "" + item
+        return getattr(self, item)
+
+    def __str__(self):
+        """
+        Determines the string representation of Stream objects
+
+        Returns
+        -------
+        text : str
+            text string that encompasses all relevant information about the Fluid object
+        """
+
+        text = "P: {:.4e} Pa\tT: {} K\th: {:.4e} kJ/kg\t\ts: {:.4e} kJ/kg/K\trho: {:.4e} kg/m3\tm: {:.4e} kg".format(self.P, self.T, self.h, self.s, self.rho, self.m)
+
+        return text
+
+
 class Phase:
 
     def __init__(self):
@@ -23,20 +99,11 @@ class Phase:
 
         self.massfrac = []
         self.molefrac = []
-
-        self.enthalpy = None
-        self.entropy = None
-        self.volume = None
-        self.density = None
-        self.props = {"P": 0,
-                      "T": 0,
-                      "h": 0,
-                      "s": 0,
-                      "rho": 0,
-                      "m": 0
-                      }
-
         self.up_to_date = True
+
+        self.props = PhaseProperties({"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0})
+        self.props_calculated = False
+
 
     def add_component(self, comp, mass, moles, update=True):
 

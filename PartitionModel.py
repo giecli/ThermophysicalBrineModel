@@ -26,4 +26,9 @@ class Partition:
 
     def calc(self, fluid, P, T):
 
+        fluid.total.props_calculated = False
+        fluid.aqueous.props_calculated = False
+        fluid.gaseous.props_calculated = False
+        fluid.mineral.props_calculated = False
+
         return self.partitionModel.value.calc(fluid, P, T, self.options)

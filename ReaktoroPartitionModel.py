@@ -14,17 +14,20 @@ def initFromElements(fluid, options):
     elements = elements[:-1]
 
     gaseous = rkt.GaseousPhase(rkt.speciate(elements))
-    gaseous.setActivityModel(options.gaseousActivityModel())
+    if gaseous.species():
+        gaseous.setActivityModel(options.gaseousActivityModel.value())
 
     aqueous = rkt.AqueousPhase(rkt.speciate(elements))
-    aqueous.setActivityModel(options.aqueousActivtityModel())
-    if options.aqueousCO2ActivityModel.value is not None:
-        if "C" in fluid.total.elements and "O" in fluid.total.elements:
-            aqueous.setActivityModel(rkt.chain(options.aqueousActivtityModel(),
-                                               options.aqueousCO2ActivityModel("CO2")))
+    if aqueous.species():
+        aqueous.setActivityModel(options.aqueousActivityModel.value())
+        if options.aqueousCO2ActivityModel.value is not None:
+            if "C" in fluid.total.elements and "O" in fluid.total.elements:
+                aqueous.setActivityModel(rkt.chain(options.aqueousActivityModel.value(),
+                                                   options.aqueousCO2ActivityModel.value("CO2")))
 
     mineral = rkt.MineralPhases(rkt.speciate(elements))
-    mineral.setActivityModel(options.mineralActivityModel())
+    if mineral.species():
+        mineral.setActivityModel(options.mineralActivityModel.value())
 
     return gaseous, aqueous, mineral, elements
 
@@ -51,6 +54,11 @@ def initFromSpecies(fluid, options):
             raise Error("\n\nThe aqueous phase is not charge balanced. The excess charge is {:.4e}.\nPlease review the input data\n".format(charge))
 
         aqueous = rkt.AqueousPhase(aqueous_str)
+        aqueous.setActivityModel(options.aqueousActivityModel.value())
+        if options.aqueousCO2ActivityModel.value is not None:
+            if "CO2(aq)" in aqueous_str:
+                aqueous.setActivityModel(rkt.chain(options.aqueousActivityModel.value(),
+                                                   options.aqueousCO2ActivityModel.value("CO2")))
 
     gaseous_str = ""
     if fluid.gaseous.components:
@@ -58,6 +66,7 @@ def initFromSpecies(fluid, options):
             gaseous_str += i.value.alias["RKT"] + " "
         gaseous_str = gaseous_str[:-1]
         gaseous = rkt.GaseousPhase(gaseous_str)
+        gaseous.setActivityModel(options.gaseousActivityModel.value())
 
     mineral_str = ""
     if fluid.mineral.components:
@@ -65,6 +74,7 @@ def initFromSpecies(fluid, options):
             mineral_str += i.value.alias["RKT"] + " "
         mineral_str = mineral_str[:-1]
         mineral = rkt.MineralPhases(mineral_str)
+        mineral.setActivityModel(options.mineralActivityModel.value())
 
     return gaseous, aqueous, mineral, elements
 

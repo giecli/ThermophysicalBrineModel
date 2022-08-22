@@ -141,4 +141,21 @@ class Fluid:
         # TODO
         pass
 
+    def __str__(self):
+        pass
+        text = "Properties:\n"
+        if self.total.props_calculated:
+            text = text + "Total: " + str(self.total.props) + "\n"
+
+            if self.aqueous.props_calculated:
+                text = text + "Aqueous: " + str(self.aqueous.props) + "\n"
+
+            if self.gaseous.props_calculated:
+                text = text + "Gaseous: " + str(self.gaseous.props) + "\n"
+
+            if self.mineral.props_calculated:
+                text = text + "MIneral: " + str(self.mineral.props) + "\n"
+
+        return text
+
     # TODO something to print the Fluid, underlying phases and properties
