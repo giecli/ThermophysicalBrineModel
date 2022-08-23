@@ -1,8 +1,6 @@
 from Fluid import Fluid
 from PropertyModel import PhaseProperties
 
-import copy
-
 
 class Blender:
 
