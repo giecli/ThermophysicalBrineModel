@@ -137,25 +137,61 @@ class Fluid:
         return newFluid
 
     @staticmethod
-    def blendFluids(fluid):
-        # TODO
-        pass
+    def blendFluids(fluid1, fluid2):
+
+        # TODO branch this out into a separate object
+
+        components1 = [i for i in fluid1.total.components]
+        components2 = [i for i in fluid2.total.components]
+
+        components = list(set(components1+components2))
+
+        overlap = list(set(components1) & set(components2))
+        if overlap:
+
+            composition = []
+            for comp in components:
+                if comp in overlap:
+                    composition.append(fluid1.total.mass[comp] + fluid2.total.mass[comp])
+                elif comp in components1:
+                    composition.append(fluid1.total.mass[comp])
+                else:
+                    composition.append(fluid2.total.mass[comp])
+
+        else:
+            composition1 = [fluid1.total.mass[i] for i in components1]
+            composition2 = [fluid2.total.mass[i] for i in components2]
+
+            composition = composition1 + composition2
+
+        return Fluid(components=components, composition=composition)
 
     def __str__(self):
-        pass
-        text = "Properties:\n"
+
+        total = self.total
+        text = "Phase: {}\n\n".format(total.phase.name)
+
+        text += "Components:\n"
+        for comp in total.components:
+            text += "{}, ".format(comp.name)
+        text = text[:-2] + "\n\n"
+
+        text += "Composition: \n{:20}|{:<15}|{:<15}|{:<15}|{:<15}|{:<15}|\n".format("Component", "Mass, kg", "MassFrac, -", "Moles, mol", "MoleFrac, -", "In Phase")
+        text += "--------------------+---------------+---------------+---------------+---------------+---------------+\n"
+        for i, comp in enumerate(total.components):
+            text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|{:>15}\n".format(comp.name, total.mass[comp], total.massfrac[i], total.moles[comp], total.molefrac[i], comp.value.phase.name)
+        text += "--------------------+---------------+---------------+---------------+---------------+---------------+\n"
+
+        text += "\n"
         if self.total.props_calculated:
-            text = text + "Total: " + str(self.total.props) + "\n"
-
-            if self.aqueous.props_calculated:
-                text = text + "Aqueous: " + str(self.aqueous.props) + "\n"
-
-            if self.gaseous.props_calculated:
-                text = text + "Gaseous: " + str(self.gaseous.props) + "\n"
-
-            if self.mineral.props_calculated:
-                text = text + "MIneral: " + str(self.mineral.props) + "\n"
-
+            text += "Properties: \n{:20}|{:<15}|{:<18}|{:<15}|{:<15}|\n".format("Phase", "Enthalpy, kJ/kg", "Entropy, kJ/kg/K", "Rho, kg/m3", "Mass, kg")
+            text += "--------------------+-----------------+----------------+---------------+---------------+\n"
+            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.aqueous.phase.name, self.aqueous.props["h"], self.aqueous.props["s"], self.aqueous.props["rho"], self.aqueous.props["m"])
+            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.gaseous.phase.name, self.gaseous.props["h"], self.gaseous.props["s"], self.gaseous.props["rho"], self.gaseous.props["m"])
+            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.mineral.phase.name, self.mineral.props["h"], self.mineral.props["s"], self.mineral.props["rho"], self.mineral.props["m"])
+            text += "--------------------+-----------------+----------------+---------------+---------------+\n"
+            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.total.phase.name, self.total.props["h"], self.total.props["s"], self.total.props["rho"], self.total.props["m"])
+            text += "--------------------+-----------------+----------------+---------------+---------------+\n"
+        else:
+            text += "Properties not yet calculated"
         return text
-
-    # TODO something to print the Fluid, underlying phases and properties

@@ -104,6 +104,23 @@ class Phase:
         self.props = PhaseProperties({"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0})
         self.props_calculated = False
 
+    def __str__(self):
+        text = "Phase: {}\n\n".format(self.phase)
+
+        text += "Components:\n"
+        for comp in self.components:
+            text += "{}, ".format(comp.name)
+        text = text[:-2] + "\n\n"
+
+        text += "Composition: \n{:20}|{:<15}|{:<15}|{:<15}|{:<15}|\n".format("Component", "Mass, kg", "MassFrac, -", "Moles, mol", "MoleFrac, -")
+        text += "--------------------+---------------+---------------+---------------+---------------+\n"
+        for i, comp in enumerate(self.components):
+            text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|\n".format(comp.name, self.mass[comp], self.massfrac[i], self.moles[comp], self.molefrac[i])
+
+        text += "\nProperties: " + str(self.props) + "\n"
+
+        return text
+
     def add_component(self, comp, mass, moles, update=True):
 
         if comp in self.components:
