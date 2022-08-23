@@ -89,8 +89,8 @@ class ThermoFunProperties:
 
         props["P"] = P
         props["T"] = T
-        props["h"] = enthalpy/total_mass
-        props["s"] = entropy/total_mass
+        props["h"] = enthalpy/ (total_mass + 1e-6)
+        props["s"] = entropy/ (total_mass + 1e-6)
         props["rho"] = total_mass / (volume + 1e-6)
         props["m"] = total_mass
 

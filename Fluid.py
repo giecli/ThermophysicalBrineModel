@@ -136,36 +136,6 @@ class Fluid:
 
         return newFluid
 
-    @staticmethod
-    def blendFluids(fluid1, fluid2):
-
-        # TODO branch this out into a separate object
-
-        components1 = [i for i in fluid1.total.components]
-        components2 = [i for i in fluid2.total.components]
-
-        components = list(set(components1+components2))
-
-        overlap = list(set(components1) & set(components2))
-        if overlap:
-
-            composition = []
-            for comp in components:
-                if comp in overlap:
-                    composition.append(fluid1.total.mass[comp] + fluid2.total.mass[comp])
-                elif comp in components1:
-                    composition.append(fluid1.total.mass[comp])
-                else:
-                    composition.append(fluid2.total.mass[comp])
-
-        else:
-            composition1 = [fluid1.total.mass[i] for i in components1]
-            composition2 = [fluid2.total.mass[i] for i in components2]
-
-            composition = composition1 + composition2
-
-        return Fluid(components=components, composition=composition)
-
     def __str__(self):
 
         total = self.total
@@ -184,11 +154,17 @@ class Fluid:
 
         text += "\n"
         if self.total.props_calculated:
-            text += "Properties: \n{:20}|{:<15}|{:<18}|{:<15}|{:<15}|\n".format("Phase", "Enthalpy, kJ/kg", "Entropy, kJ/kg/K", "Rho, kg/m3", "Mass, kg")
+            text += "Properties: \n"
+            text += "Pressure: {} Pa\n".format(self.total.props["P"])
+            text += "Temperature: {} K\n".format(self.total.props["T"])
+            text += "{:20}|{:<15}|{:<18}|{:<15}|{:<15}|\n".format("Phase", "Enthalpy, kJ/kg", "Entropy, kJ/kg/K", "Rho, kg/m3", "Mass, kg")
             text += "--------------------+-----------------+----------------+---------------+---------------+\n"
-            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.aqueous.phase.name, self.aqueous.props["h"], self.aqueous.props["s"], self.aqueous.props["rho"], self.aqueous.props["m"])
-            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.gaseous.phase.name, self.gaseous.props["h"], self.gaseous.props["s"], self.gaseous.props["rho"], self.gaseous.props["m"])
-            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.mineral.phase.name, self.mineral.props["h"], self.mineral.props["s"], self.mineral.props["rho"], self.mineral.props["m"])
+            if self.aqueous.components:
+                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.aqueous.phase.name, self.aqueous.props["h"], self.aqueous.props["s"], self.aqueous.props["rho"], self.aqueous.props["m"])
+            if self.gaseous.components:
+                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.gaseous.phase.name, self.gaseous.props["h"], self.gaseous.props["s"], self.gaseous.props["rho"], self.gaseous.props["m"])
+            if self.mineral.components:
+                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.mineral.phase.name, self.mineral.props["h"], self.mineral.props["s"], self.mineral.props["rho"], self.mineral.props["m"])
             text += "--------------------+-----------------+----------------+---------------+---------------+\n"
             text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.total.phase.name, self.total.props["h"], self.total.props["s"], self.total.props["rho"], self.total.props["m"])
             text += "--------------------+-----------------+----------------+---------------+---------------+\n"

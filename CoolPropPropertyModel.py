@@ -44,7 +44,7 @@ class CoolPropProperties:
             props["P"] = calc.p()
             props["T"] = calc.T()
             props["h"] = (calc.hmass() - h0) / 1e3
-            props["s"] = (calc.smass() - s0)/ 1e3
+            props["s"] = (calc.smass() - s0) / 1e3
             props["rho"] = calc.rhomass()
             props["m"] = total_mass
 
