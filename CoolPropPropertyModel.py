@@ -4,14 +4,17 @@ import CoolProp as cp
 
 
 class CoolPropPropertyOptions:
-    #TODO
-    pass
+
+    def __init__(self):
+        self.massfracCutOff = 1e-6
 
 
 class CoolPropProperties:
 
     @staticmethod
     def calc(phase, P, T, options):
+
+        options = options.CoolProp
 
         # check if components are present in significant quantities and create the corresponding
         # composition input for CoolProp
@@ -21,7 +24,7 @@ class CoolPropProperties:
         components = ""
         mass_fracs = []
         for i in range(len(phase.components)):
-            if phase.massfrac[i] > 1e-6:
+            if phase.massfrac[i] > options.massfracCutOff:
                 components += phase.components[i].value.alias["CP"] + "&"
                 mass_fracs.append(phase.massfrac[i])
         components = components[:-1]
