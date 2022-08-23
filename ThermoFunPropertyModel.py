@@ -9,13 +9,8 @@ import CoolProp as cp
 
 
 class ThermoFunPropertyOptions:
-    #TODO
-    pass
 
-
-class ThermoFunUtils:
-
-    class Databases(Enum):
+    class Database(Enum):
         AQ17 = "aq17-thermofun.json"
         CEMDATA18 = "cemdata18-thermofun.json"
         HERACLES = "heracles-thermofun.json"
@@ -26,35 +21,37 @@ class ThermoFunUtils:
         SLOP98INORGANIC = "slop98-inorganic-thermofun.json"
         SLOP98ORGANIC = "slop98-organic-thermofun.json"
 
-    home_dir = "ThermoFun"
-    config_file = "hub-connection-config.json"
-
     def get_database(self, database):
         # get the home directory
         home = os.getcwd()
 
         # navigate to the ThermoFun directory
-        ThermoFun_dir = home + "/" + self.home_dir
+        ThermoFun_dir = home + "/" + self.databaseHomeDir
         os.chdir(ThermoFun_dir)
 
         # save the ThermoFun database
-        dbc = thermohubclient.DatabaseClient(self.config_file)
+        dbc = thermohubclient.DatabaseClient(self.databaseConfigFile)
         dbc.saveDatabase(database.value)
 
         # navigate back to the home directory
         os.chdir(home)
 
+    def __init__(self):
+        self.database = self.Database.SLOP98INORGANIC
+        self.databaseHomeDir = "ThermoFun"
+        self.databaseConfigFile = "hub-connection-config.json"
+
+        self.massfracCutOff = 1e-6
+
 
 class ThermoFunProperties:
-
-    # TODO need to improve the way the user selects the database
 
     @staticmethod
     def calc(phase, P, T, options):
 
-        database_name = ThermoFunUtils.Databases.SLOP98INORGANIC
+        options = options.ThermoFun
 
-        database = ThermoFunUtils.home_dir + "/" + database_name.value
+        database = options.databaseHomeDir + "/" + options.database.value
         engine = fun.ThermoEngine(database)
 
         props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0}
@@ -79,7 +76,7 @@ class ThermoFunProperties:
                 entropy += phase.mass[comp] * (calc.smass() - s0) / 1e3
                 volume += phase.mass[comp] / calc.rhomass()
 
-            elif phase.massfrac[i] > 1e-6:
+            elif phase.massfrac[i] > options.massfracCutOff:
                 properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])
                 properties0 = engine.thermoPropertiesSubstance(Tref, Pref, comp.value.alias["RKT"])
 

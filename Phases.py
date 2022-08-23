@@ -104,7 +104,6 @@ class Phase:
         self.props = PhaseProperties({"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0})
         self.props_calculated = False
 
-
     def add_component(self, comp, mass, moles, update=True):
 
         if comp in self.components:
