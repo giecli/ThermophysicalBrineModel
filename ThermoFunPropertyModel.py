@@ -1,4 +1,5 @@
 from Databases import Comp
+from Phases import Phase
 from Constants import *
 
 from enum import Enum
@@ -6,11 +7,39 @@ import os
 import thermohubclient
 import thermofun as fun
 import CoolProp as cp
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
 
 
 class ThermoFunPropertyOptions:
+    """
+        The ThermoFunPropertyOptions class contains all of the ThermoFun property calculation options
+
+        Classes
+        -------
+        Database
+
+        Attributes
+        ----------
+        database: self.Database
+            the ThermoFun database to be used
+        databaseHomeDir: str
+            the home director of the ThermoFun database - relative to the project's home directory
+        databaseConfigFile: str
+            the name of the ThermoHub configuration file - in the databaseHomeDir directory
+        massfracCutOff: float
+            the minimum mass fraction for a species to be included in the property calculations
+
+        Methods
+        -------
+        get_database(self, database)
+        __init__(self)
+
+    """
 
     class Database(Enum):
+        """
+            Database sub-class contains all the ThermoFun databases that can be used
+        """
         AQ17 = "aq17-thermofun.json"
         CEMDATA18 = "cemdata18-thermofun.json"
         HERACLES = "heracles-thermofun.json"
@@ -21,7 +50,15 @@ class ThermoFunPropertyOptions:
         SLOP98INORGANIC = "slop98-inorganic-thermofun.json"
         SLOP98ORGANIC = "slop98-organic-thermofun.json"
 
-    def get_database(self, database):
+    def get_database(self, database: str):
+        """
+            retrieves the database from ThermoHub
+
+            Parameters
+            ----------
+            database: str
+                the ThermoFun database name
+        """
         # get the home directory
         home = os.getcwd()
 
@@ -37,6 +74,9 @@ class ThermoFunPropertyOptions:
         os.chdir(home)
 
     def __init__(self):
+        """
+            initialises the ThermoFunPropertyModelOptions
+        """
         self.database = self.Database.SLOP98INORGANIC
         self.databaseHomeDir = "ThermoFun"
         self.databaseConfigFile = "hub-connection-config.json"
@@ -45,11 +85,39 @@ class ThermoFunPropertyOptions:
 
 
 class ThermoFunProperties:
+    """
+        The ThermoFunProperties class orchestrates the property calculations using ThermoFun
+
+        Methods
+        -------
+        calc(phase, P, T, options)
+    """
 
     @staticmethod
-    def calc(phase, P, T, options):
+    def calc(phase: Phase, P: float, T: float, options: ThermoFunPropertyOptions) -> Dict:
+        """
+            calculates the thermophysical properties of the phase at the specified temperature and pressure
 
-        options = options.ThermoFun
+            Parameters
+            ----------
+            phase: Phase
+                the phase to be evaluated
+            P: float
+                the pressure in Pa
+            T: float
+                the temperature in K
+            options: ThermoFunPropertyOptions
+                the calculation options to be used
+
+            Returns
+            -------
+            props: Dict
+
+            Raises:
+            Nothing
+        """
+
+        # options = options.ThermoFun
 
         database = options.databaseHomeDir + "/" + options.database.value
         engine = fun.ThermoEngine(database)
@@ -89,8 +157,8 @@ class ThermoFunProperties:
 
         props["P"] = P
         props["T"] = T
-        props["h"] = enthalpy/ (total_mass + 1e-6)
-        props["s"] = entropy/ (total_mass + 1e-6)
+        props["h"] = enthalpy / (total_mass + 1e-6)
+        props["s"] = entropy / (total_mass + 1e-6)
         props["rho"] = total_mass / (volume + 1e-6)
         props["m"] = total_mass
 

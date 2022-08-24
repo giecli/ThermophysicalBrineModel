@@ -1,6 +1,52 @@
-class Species:
+from Phases import PhaseType
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
 
-    def __init__(self, rkt_name, cp_name, elements, Mr, charge, phase):
+
+class Species:
+    """
+        the Species class summarises the properties of a chemical species
+
+        Attributes
+        ----------
+        name: str
+            the species name
+        alias: Dict
+            dictionary of the species alias in Reaktoro and CoolProp
+        elements: List[str]
+            the elements that make up this species
+        Mr: float
+            the molecular mass of the species in kg/mol
+        charge: int
+            the molecular charge of the species in C/mol
+        phase: PhaseType
+            the phase in which this species resides
+
+        Methods
+        -------
+        __init__(self, rkt_name, cp_name, elements, Mr, charge, phase)
+        __str__(self)
+
+    """
+
+    def __init__(self, rkt_name: str, cp_name: Union[str, None], elements: List[str], Mr: float, charge: int, phase: PhaseType):
+        """
+            initialises the Species object
+
+            Parameters
+            ----------
+            rkt_name: str
+                the species name in the Reaktoro database
+            cp_name: Union[str, None]
+                the species name in the CoolProp database
+            elements: List[str]
+                the elements in the species
+            Mr: float
+                the species molecular weight in kg/mol
+            charge: float
+                the species charge in C/mol
+            phase: PhaseType
+                the phase in which this species resides
+        """
         self.name = rkt_name
         self.alias = {"RKT": rkt_name, "CP": cp_name}
         self.elements = elements
@@ -8,7 +54,14 @@ class Species:
         self.charge = charge
         self.phase = phase
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+            Generates the Species object's string representation
+
+            Returns
+            -------
+            text:str
+        """
         text = "Species Name: {} \n".format(self.name)
 
         text = text + "Phase: {}\n".format(self.phase.value)

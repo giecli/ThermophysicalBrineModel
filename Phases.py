@@ -1,7 +1,12 @@
+
 from enum import Enum
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
 
 
 class PhaseType(Enum):
+    """
+        The PhaseType class summarises all the possible phases
+    """
     LIQUID = "liquid"
     AQUEOUS = "aqueous"
     GASEOUS = "gaseous"
@@ -13,7 +18,7 @@ class PhaseType(Enum):
 
 class PhaseProperties:
     """
-        The Stream subclass summarises the properties of a given phase
+        The PhaseProperties class summarises the properties of a given phase
 
         Attributes
         ----------
@@ -40,12 +45,12 @@ class PhaseProperties:
 
     def __init__(self, props):
         """
-        Initialises the Stream object
+            Initialises the PhaseProperties object
 
-        Parameters
-        ----------
-        props: Dict
-            dictionary of the fluid properties
+            Parameters
+            ----------
+            props: Dict
+                dictionary of the fluid properties
 
         """
         # creates a variable for each of the items in props
@@ -57,16 +62,16 @@ class PhaseProperties:
 
     def __getitem__(self, item: str):
         """
-        Allows the property to be retrieved by either "Stream.xzy" or "Stream["xyz"]
+            Allows the property to be retrieved by either "PhaseProperties.xzy" or "PhaseProperties["xyz"]
 
-        Parameters
-        ----------
-        item: str
-            the name of the property to return. Valid properties as p, t, h, s, x, rho, phase, fluid for now
+            Parameters
+            ----------
+            item: str
+                the name of the property to return. Valid properties as p, t, h, s, x, rho, phase, fluid for now
 
-        Returns
-        -------
-        float, int
+            Returns
+            -------
+            float, int
         """
 
         item = "" + item
@@ -74,12 +79,12 @@ class PhaseProperties:
 
     def __str__(self):
         """
-        Determines the string representation of Stream objects
+            Determines the string representation of PhaseProperties objects
 
-        Returns
-        -------
-        text : str
-            text string that encompasses all relevant information about the Fluid object
+            Returns
+            -------
+            text : str
+                text string that encompasses all relevant information about the Fluid object
         """
 
         text = "P: {:.4e} Pa\tT: {} K\th: {:.4e} kJ/kg\t\ts: {:.4e} kJ/kg/K\trho: {:.4e} kg/m3\tm: {:.4e} kg".format(self.P, self.T, self.h, self.s, self.rho, self.m)
@@ -88,8 +93,45 @@ class PhaseProperties:
 
 
 class Phase:
+    """
+        The Phase class summarises components, compositions and properties of a phase
+
+        Attributes
+        ----------
+        phase: PhaseType
+            the type of the phase
+        components: List[Comp]
+            the components of the phase
+        elements: Set
+            the elements of the phase
+        mass: Dict
+            the mass of each component in kg
+        moles: Dict
+            the moles of each component in mol
+        massfrac: List
+            the mass fraction of each component
+        molefrac: List
+            the mole fraction of each component
+        up_to_date: bool
+            flag indicating whether the mass and mole fractions are up to date
+        props: PhaseProperties
+            the thermophysical properties of the phase
+        props_calculated: bool
+            flag indicating whether the physical properties have been calculated
+
+        Methods
+        -------
+        __init__(phase_type, props)
+        __str__()
+        add_component(self, comp, mass, moles, update=True)
+        update(self
+    """
 
     def __init__(self):
+        """
+            Initialises the Phase object
+
+        """
         self.phase = PhaseType.NONE
         self.components = []
         self.elements = {}
@@ -105,6 +147,11 @@ class Phase:
         self.props_calculated = False
 
     def __str__(self):
+        """
+           Creates the Phase object string representation
+
+        """
+
         text = "Phase: {}\n\n".format(self.phase)
 
         text += "Components:\n"
@@ -121,7 +168,25 @@ class Phase:
 
         return text
 
-    def add_component(self, comp, mass, moles, update=True):
+    def add_component(self, comp, mass: float, moles: float, update: Optional[bool] =True) -> NoReturn:
+        """
+            Adds a component to the phase
+
+            Parameters
+            ----------
+            comp: Comp
+                The component to be added to the phase
+            mass: float
+                The mass of the component to be added
+            moles: float
+                The moles of the component to be added
+            update: Optional[bool]
+                Flag to determine whether the mass and mole fractions should be recalculated
+
+            Returns
+            -------
+            NoReturn
+        """
 
         if comp in self.components:
             self.mass[comp] += mass
@@ -140,7 +205,14 @@ class Phase:
         if update:
             self.update()
 
-    def update(self):
+    def update(self) -> NoReturn:
+        """
+            Recalculates the mass and mole fractions of all components in the phase
+
+            Returns
+            -------
+            NoReturn
+        """
 
         if self.up_to_date:
             return
@@ -167,6 +239,9 @@ class Phase:
 
 
 class LiquidPhase(Phase):
+    """
+        The LiquidPhase class summarises components, compositions and properties of a liquid phase
+    """
 
     def __init__(self):
         super().__init__()
@@ -174,6 +249,9 @@ class LiquidPhase(Phase):
 
 
 class AqueousPhase(Phase):
+    """
+        The AqueousPhase class summarises components, compositions and properties of an aqueous phase
+    """
 
     def __init__(self):
         super().__init__()
@@ -181,6 +259,9 @@ class AqueousPhase(Phase):
 
 
 class GaseousPhase(Phase):
+    """
+        The GaseousPhase class summarises components, compositions and properties of a gaseous phase
+    """
 
     def __init__(self):
         super().__init__()
@@ -188,6 +269,9 @@ class GaseousPhase(Phase):
 
 
 class MineralPhase(Phase):
+    """
+        The MineralPhase class summarises components, compositions and properties of a mineral phase
+    """
 
     def __init__(self):
         super().__init__()
@@ -195,6 +279,14 @@ class MineralPhase(Phase):
 
 
 class TotalPhase(Phase):
+    """
+        The TotalPhase class summarises components, compositions and properties of all phases
+
+        Attributes
+        ----------
+        phases: List[Phases]
+
+    """
 
     def __init__(self):
         super().__init__()

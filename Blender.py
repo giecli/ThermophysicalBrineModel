@@ -1,11 +1,47 @@
 from Fluid import Fluid
 from PropertyModel import PhaseProperties
 
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
+
 
 class Blender:
+    """
+    The Blender class allows two Fluids to be mixed
+
+    Attributes
+    ----------
+    None
+
+    Methods
+    -------
+    blend(fluid1, fluid2, ratio1to2, ratio1to2=1.0)
+
+    """
 
     @staticmethod
-    def blend(fluid1, fluid2, ratio1to2=1.0):
+    def blend(fluid1: Fluid, fluid2: Fluid, ratio1to2: Optional[float] = 1.0) -> Fluid:
+        """
+        Mixes two fluids according to a mass-based mixing ration.
+
+        Parameters
+        ----------
+        fluid1 : Fluid
+            the first Fluid to be mixed
+        fluid2 : Fluid
+            the second Fluid to be mixed
+        ratio1to2 : Union[float, int]
+            the ratio of the mass of fluid2 to the mass of fluid1
+
+        Returns
+        -------
+        Fluid
+            a Fluid object containing the mixed fluids
+
+        Raises
+        ------
+        Nothing
+        """
+
         components1 = [i for i in fluid1.total.components]
         components2 = [i for i in fluid2.total.components]
 

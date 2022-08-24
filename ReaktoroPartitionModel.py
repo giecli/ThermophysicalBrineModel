@@ -5,9 +5,36 @@ from Fluid import Fluid
 
 import reaktoro as rkt
 from enum import Enum
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
 
 
-def initFromElements(fluid, options):
+def initFromElements(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.AqueousPhase, rkt.MineralPhase, str]:
+    """
+        initialises the partition species from elements
+
+        Parameters
+        ----------
+        fluid: Fluid
+            the fluid to be partitioned
+        options: ReaktoroPartitionOptions
+            the partitioning options
+
+        Returns
+        -------
+        gaseous: rkt.GaseousPhase
+            rkt.GaseousPhase object containing all possible gaseous species
+        aqueous: rkt.AqueousPhase
+            rkt.AqueousPhase object containing all possible aqueous species
+        mineral: rkt.MineralPhase
+            rkt.MineralPhase object containing all possible mineral species
+        elements: str
+            string array of all elements used
+
+        Raises
+        ------
+        Nothing
+
+    """
     elements = ""
     for i in fluid.total.elements:
         elements += i + " "
@@ -32,7 +59,34 @@ def initFromElements(fluid, options):
     return gaseous, aqueous, mineral, elements
 
 
-def initFromSpecies(fluid, options):
+def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.AqueousPhase, rkt.MineralPhase, str]:
+    """
+        initialises the partition species from the specified species
+
+        Parameters
+        ----------
+        fluid: Fluid
+            the fluid to be partitioned
+        options: ReaktoroPartitionOptions
+            the partitioning options
+
+        Returns
+        -------
+        gaseous: rkt.GaseousPhase
+            rkt.GaseousPhase object containing all gaseous species
+        aqueous: rkt.AqueousPhase
+            rkt.AqueousPhase object containing all aqueous species
+        mineral: rkt.MineralPhase
+            rkt.MineralPhase object containing all mineral species
+        elements: str
+            string array of all elements used
+
+        Raises
+        ------
+        Error
+            if the aqueous phase is not charge balanced
+
+    """
     elements = ""
     for i in fluid.total.elements:
         elements += i + " "
@@ -80,16 +134,65 @@ def initFromSpecies(fluid, options):
 
 
 class ReaktoroPartitionOptions:
+    """
+        The ReaktoroPartitionOptions class contains all options seetings for a Reaktoro partition
+
+        Classes
+        -------
+        Database
+        SpeciesMode
+        AqueousActivityModel
+        AqueousCO2ActivityModel
+        GaseousActivityModel
+        MineralActivityModel
+
+        Attributes
+        ----------
+        database: self.Database
+            the species database to be used
+        speciesMode: self.SpeciesMode
+            the method for generating the partitioning species
+        aqueousActivityModel: self.AqueousActivityModel
+            the activity model to be used for the aqueous phase
+        aqueousCO2ActivityModel: self.AqueousCO2ActivityModel
+            the activity model to be used for aqueous CO2
+        gaseousActivityModel: self.GaseousActivityModels
+            the activity model to be used for the gaseous phase
+        mineralActivityModel: self.MineralActivityModels
+            the activity model to be used for the mineral phase
+        strictSucess: bool
+            flag to decided whether only fully converged results are to be accepted
+        debug: bool
+            flag to decide whether to output a debug of the reaktoro partitioning
+        debugFileName: str
+            the file location of where the reaktoro debug file will be written
+
+        Methods
+        -------
+        __init__(self)
+
+        Raises
+        ------
+        Nothing
+    """
 
     class Database(Enum):
+        """
+            the Database class contains the reaktoro databases that can be used for the partition
+        """
         SUPCRTBL = "supcrtbl"
-        BS = "total horse shite"
 
     class SpeciesMode(Enum):
+        """
+            the SpeciesMode class contains links to the methods for generating the partitioning species
+        """
         ALL = initFromElements
         SELECTED = initFromSpecies
 
     class AqueousActivityModels(Enum):
+        """
+            The AqueousActivityModels class contains links to all the activity models that can be used for the aqueous phase
+        """
         IDEAL = rkt.ActivityModelIdealAqueous
         DAVIES = rkt.ActivityModelDavies
         DEBYE_HUCKEL = rkt.ActivityModelDebyeHuckel
@@ -102,12 +205,18 @@ class ReaktoroPartitionOptions:
         PITZER_HMW = rkt.ActivityModelPitzerHMW
 
     class AqueousCO2ActivityModels(Enum):
+        """
+            The AqueousCO2ActivityModels class contains links to all the activity models that can be used for aqueous CO2
+        """
         NONE = None
         DRUMMOND = rkt.ActivityModelDrummond
         DUAN_SUN = rkt.ActivityModelDuanSun
         RUMPF = rkt.ActivityModelRumpf
 
     class GaseousActivityModels(Enum):
+        """
+            The GaseousActivityModels class contains links to all the activity models that can be used for the gaseous phase
+        """
         IDEAL = rkt.ActivityModelIdealGas
         PENG_ROBINSON = rkt.ActivityModelPengRobinson
         REDLICH_KWONG = rkt.ActivityModelRedlichKwong
@@ -115,10 +224,16 @@ class ReaktoroPartitionOptions:
         VAN_DER_WAALS = rkt.ActivityModelVanDerWaals
 
     class MineralActivityModels(Enum):
+        """
+            The MineralActivityModels class contains links to all the activity models that can be used for the mineral phase
+        """
         IDEAL = rkt.ActivityModelIdealSolution(rkt.StateOfMatter.Solid)
         REDLICH_KISTER = rkt.ActivityModelRedlichKister
 
     def __init__(self):
+        """
+            initialises the ReaktoroPartitionOptions
+        """
         self.database = self.Database.SUPCRTBL
         self.speciesMode = self.SpeciesMode.SELECTED
 
@@ -134,12 +249,43 @@ class ReaktoroPartitionOptions:
 
 
 class ReaktoroPartition:
+    """
+        The ReaktoroPartition class orchestrates the fluid partition using Reaktoro
 
-    # TODO a P-H Equilibration would be cool too...
+        Methods
+        -------
+        calc(fluid, P, T, options)
+
+        TODO a P-H Equilibration would be cool too...
+    """
+
+
 
     @staticmethod
-    def calc(fluid, P, T, options):
-        options = options.Reaktoro
+    def calc(fluid: Fluid, P: float, T: float, options: ReaktoroPartitionOptions) -> Fluid:
+        """
+            calculates the fluid partition using Reaktoro
+
+            Parameters
+            ----------
+            fluid: Fluid
+                the fluid to be partitioned
+            P: float
+                the pressure in Pa
+            T: float
+                the temperature in K
+            options: ReaktoroPartitionOptions
+                the options to be used for the partition calculations
+
+            Returns
+            -------
+            Fluid
+
+            Raises
+            ------
+            Assertion
+                if the equilibration is not successful (provided this check has not been disabled)
+        """
 
         db = rkt.SupcrtDatabase(options.database.value)
 

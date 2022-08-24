@@ -2,9 +2,14 @@ from Species import Species
 from Phases import PhaseType
 
 from enum import Enum
+from typing import Dict
 
 
 class Comp(Enum):
+    """
+    The Comp class stores all of the available species.
+    """
+
     # these species exist in both CoolProp and Reaktoro
     STEAM = Species("H2O(g)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.GASEOUS)
     WATER = Species("H2O(aq)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.AQUEOUS)
@@ -1106,6 +1111,16 @@ class Comp(Enum):
 
 
 class LookUp:
+    """
+    The LookUp class provides an easy way to convert from a Reaktoro or CoolProp species name to the Component object.
+
+    Attributes
+    ----------
+    reaktoroToComp : Dict
+        a dictionary to translate Reaktoro species names into a Component object
+    coolpropToComp : Dict
+        a dictionary to translate CoolProp species names into a Component object
+    """
 
     reaktoroToComp = {
         "H2O(g)": Comp.STEAM,
@@ -2209,13 +2224,41 @@ class LookUp:
         "Neon": Comp.Ne_g,
         "Xenon": Comp.Xe_g}
 
-    def withReaktoroName(self, name):
+    def withReaktoroName(self, name: str) -> Comp:
+        """
+        Translate the Reaktoro species name into a Comp object
+
+        Parameters
+        ----------
+        name : str
+            the Reaktoro species name
+
+        Returns
+        -------
+        Comp
+            a Comp object of the Reaktoro species
+        """
         return self.reaktoroToComp[name]
 
-    def withCoolPropName(self, name):
+    def withCoolPropName(self, name: str) -> Comp:
+        """
+        Translate the CoolProp species name into a Comp object
+
+        Parameters
+        ----------
+        name : str
+            the CoolProp species name
+
+        Returns
+        -------
+        Comp
+            a Comp object of the CoolProp species
+        """
         return self.coolpropToComp[name]
 
     def generate(self):
+
+        # this could do with a bit more work... not sure if it actually works as intended
 
         self.reaktoroToComp = {}
         self.coolpropToComp = {}

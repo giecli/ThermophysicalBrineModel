@@ -1,23 +1,56 @@
 from Constants import *
+from Phases import Phase
 
 import CoolProp as cp
+from typing import List, Union, Dict, Tuple, NoReturn
 
 
 class CoolPropPropertyOptions:
+    """
+    The settings governing the calculation of fluid properties from CoolProp.
+
+    Attributes
+    ----------
+    massfracCutOff : float
+        the minimum mass fraction for a component to be considered in the property calculations
+    """
 
     def __init__(self):
         self.massfracCutOff = 1e-6
 
 
 class CoolPropProperties:
+    """
+    The CoolPropProperties class handles the calculation of fluid properties using CoolProp.
+
+    Methods
+    -------
+    calc(phase, P, T, options)
+    """
 
     @staticmethod
-    def calc(phase, P, T, options):
+    def calc(phase: Phase, P: Union[int, float], T: Union[int, float], options: CoolPropPropertyOptions) -> Dict:
+        """
+        Calculates the properties of a phase (gaseous) at a given temperature and pressure.
 
-        options = options.CoolProp
+        Parameters
+        ----------
+        phase : Phase
+            the (gaseous) phase storing the composition
+        P : Union[int, float]
+            the pressure in Pa
+        T : Union[float, int]
+            the temperature in K
 
-        # check if components are present in significant quantities and create the corresponding
-        # composition input for CoolProp
+        Returns
+        -------
+        Dict
+            a dictionary of the fluid properties
+
+        Raises
+        ------
+        Nothing
+        """
 
         props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0}
 

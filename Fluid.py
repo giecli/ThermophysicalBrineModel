@@ -1,13 +1,51 @@
-import copy
-
 from Phases import *
 from Databases import Comp
 from ErrorHandling import Error, InputError
+from Phases import Phase
+
+import copy
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
 
 
 class Fluid:
+    """
+    The Fluid class combines all phases (aqueous, gaseous and mineral)
 
-    def __init__(self, components=None, composition=None):
+    Attributes
+    ----------
+    total : Phase
+    aqueous : Phase
+    liquid : Phase
+    gaseous : Phase
+    mineral : Phase
+
+    Methods
+    -------
+    __init__(self, components=None, composition=None)
+    __str__(self)
+    addComponent(self, component, composition, update=True)
+    addComponents(self, components, composition)
+    promotePhaseToFluid(self, phaseType)
+    promotePhasesToFluid(self, phaseTypes)
+
+    """
+    def __init__(self, components: Optional[Union[List[Comp], Comp]] =None, composition: Optional[Union[List[float], float]] =None):
+        """
+        Initialises a Fluid object from components and composition (optional)
+
+        Parameters
+        ----------
+        components (opt): Union[List[Comp], Comp]
+            the component(s) to be added to the fluid
+        composition (opt): Union[List[Union[int, float]], Union[int, float]
+            the composition of the component(s) to be added to the fluid in kg
+
+        Returns
+        -------
+        Fluid
+            a Fluid object
+
+        """
 
         self.total = TotalPhase()
         self.aqueous = AqueousPhase()
@@ -18,7 +56,32 @@ class Fluid:
         if components is not None and composition is not None:
             self.addComponents(components, composition)
 
-    def addComponent(self, component, composition, update=True):
+    def addComponent(self, component: Comp, composition: float, update: Optional[bool] =True) -> NoReturn:
+        """
+        add a component to the Fluid
+
+        Parameters
+        ----------
+        component : Comp
+            the component to be added to the FLuid
+        composition : Union[int, float]
+            the mass of the component to be added to the Fluid in kg
+        update : bool
+            flag to trigger the recalculation of mass and mole fractions
+
+        Returns
+        -------
+        NoReturn
+
+        Raises
+        ------
+        InputError
+            if the component does not exist in the database
+            if the composition is not in the correct format
+        Error
+            if the component's native phase is not recognised
+
+        """
 
         # check that all components exist within the database
         if type(component) != Comp:
@@ -63,8 +126,27 @@ class Fluid:
 
         raise Error("\n\nThe component's native phase is not recognised")
 
-    def addComponents(self, components, composition):
+    def addComponents(self, components: List[Comp], composition: List[float]) -> NoReturn:
+        """
+        add components to the Fluid
 
+        Parameters
+        ----------
+        components : Comp
+            the component to be added to the FLuid
+        composition : Union[int, float]
+            the mass of the component to be added to the Fluid in kg
+
+        Returns
+        -------
+        NoReturn
+
+        Raises
+        ------
+        InputError
+            if the number of components and composition is inconsistent
+
+        """
         if len(components) != len(composition):
             raise InputError("\n\nThe number of components and compositions provided is not the same")
 
@@ -79,7 +161,21 @@ class Fluid:
         self.gaseous.update()
         self.mineral.update()
 
-    def promotePhaseToFluid(self, phaseType):
+    def promotePhaseToFluid(self, phaseType: PhaseType):
+        """
+        create a Fluid object for a given Phase
+
+        Parameters
+        ----------
+        phaseType : PhaseType
+            the phase from which the FLuid should be created
+
+        Returns
+        -------
+        Fluid
+            the new Fluid object
+
+        """
 
         if type(phaseType) == PhaseType.TOTAL:
             return copy.deepcopy(self)
@@ -95,7 +191,21 @@ class Fluid:
 
         return newFluid
 
-    def promotePhasesToFluid(self, phaseTypes):
+    def promotePhasesToFluid(self, phaseTypes: List[PhaseType]):
+        """
+        create a Fluid object from given Phases
+
+        Parameters
+        ----------
+        phaseTypes : List[PhaseType]
+            the phases from which the FLuid should be created
+
+        Returns
+        -------
+        Fluid
+            the new Fluid object
+
+        """
 
         if PhaseType.TOTAL in phaseTypes:
             return copy.deepcopy(self)
@@ -136,7 +246,16 @@ class Fluid:
 
         return newFluid
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        creates the Fluid's string representation, i.e. to allow it to be printed
+
+        Returns
+        -------
+        str
+            the Fluid object's string representation
+
+        """
 
         total = self.total
         text = "Phase: {}\n\n".format(total.phase.name)

@@ -1,7 +1,11 @@
 import copy
+from typing import List, Union, Dict, Tuple, NoReturn, Optional
 
 
 class UserPartitionOptions:
+    """
+         the UserPartionOptions class contains the options for the UserPartition calculation
+    """
 
     pass
 
