@@ -28,7 +28,7 @@ class Species:
 
     """
 
-    def __init__(self, rkt_name: str, cp_name: Union[str, None], elements: List[str], Mr: float, charge: int, phase: PhaseType):
+    def __init__(self, rkt_name: str, cp_name: Union[str, None], elements: List[str], Mr: float, charge: Union[int, float], phase: PhaseType):
         """
             initialises the Species object
 

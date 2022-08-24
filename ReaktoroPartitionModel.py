@@ -104,7 +104,9 @@ def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueou
             charge += i.value.charge * fluid.total.moles[i]
         aqueous_str = aqueous_str[:-1]
 
-        if abs(charge) > 1e-6:
+        charge *= 1/sum([fluid.aqueous.moles[i] for i in fluid.aqueous.moles])
+
+        if abs(charge) > 1e-3:
             raise Error("\n\nThe aqueous phase is not charge balanced. The excess charge is {:.4e}.\nPlease review the input data\n".format(charge))
 
         aqueous = rkt.AqueousPhase(aqueous_str)
@@ -294,8 +296,20 @@ class ReaktoroPartition:
         system = rkt.ChemicalSystem(db, aqueous, gaseous, mineral)
 
         state = rkt.ChemicalState(system)
+        state_mass = 0
+        material = rkt.Material(system)
+        material_mass = 0
         for i in range(len(fluid.total.components)):
-            state.set(fluid.total.components[i].value.alias["RKT"], fluid.total.massfrac[i], "kg")
+            comp = fluid.total.components[i]
+            if comp.value.phase == PhaseType.ELEMENT:
+                material.add(comp.value.alias["RKT"], fluid.total.massfrac[i], "kg")
+                material_mass += fluid.total.massfrac[i]
+            else:
+                state.set(comp.value.alias["RKT"], fluid.total.massfrac[i], "kg")
+
+        # state = rkt.ChemicalState(system)
+        # for i in range(len(fluid.total.components)):
+        #     state.set(fluid.total.components[i].value.alias["RKT"], fluid.total.massfrac[i], "kg")
 
         if options.speciesMode == ReaktoroPartitionOptions.SpeciesMode.ALL:
             # this is a total fudge....

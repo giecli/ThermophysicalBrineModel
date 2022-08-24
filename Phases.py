@@ -41,6 +41,8 @@ class PhaseProperties:
         __getitem__(item)
         __str__()
 
+        # TODO would be nice to output the volume as well
+
     """
 
     def __init__(self, props):
@@ -223,10 +225,6 @@ class Phase:
         self.massfrac = [self.mass[self.components[i]] / (total_mass + 1e-6) for i in range(len(self.components))]
         self.molefrac = [self.moles[self.components[i]] / (total_moles +1e-6) for i in range(len(self.components))]
 
-        self.enthalpy = None
-        self.entropy = None
-        self.volume = None
-        self.density = None
         self.props = {"P": 0,
                       "T": 0,
                       "h": 0,
@@ -276,6 +274,17 @@ class MineralPhase(Phase):
     def __init__(self):
         super().__init__()
         self.phase = PhaseType.MINERAL
+
+
+class ElementPhase(Phase):
+    """
+        The MineralPhase class summarises components, compositions and properties of a mineral phase
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.phase = PhaseType.ELEMENT
+
 
 
 class TotalPhase(Phase):

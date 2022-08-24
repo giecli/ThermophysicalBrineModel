@@ -28,6 +28,8 @@ class Fluid:
     promotePhaseToFluid(self, phaseType)
     promotePhasesToFluid(self, phaseTypes)
 
+    # TODO something to scale the fluid (i.e. based on mass or volume)
+
     """
     def __init__(self, components: Optional[Union[List[Comp], Comp]] =None, composition: Optional[Union[List[float], float]] =None):
         """
@@ -52,6 +54,7 @@ class Fluid:
         self.liquid = LiquidPhase()
         self.gaseous = GaseousPhase()
         self.mineral = MineralPhase()
+        self.element = ElementPhase()
 
         if components is not None and composition is not None:
             self.addComponents(components, composition)
@@ -122,9 +125,13 @@ class Fluid:
             self.mineral.add_component(comp, mass, moles, update=update)
             self.total.phases[PhaseType.MINERAL] = self.mineral
 
+        if phase == PhaseType.ELEMENT:
+            self.element.add_component(comp, mass, moles, update=update)
+            self.total.phases[PhaseType.ELEMENT] = self.element
+
             return
 
-        raise Error("\n\nThe component's native phase is not recognised")
+        raise Error("\n\nThe component's native phase is not recognised. Component:{}".format(component))
 
     def addComponents(self, components: List[Comp], composition: List[float]) -> NoReturn:
         """
@@ -268,7 +275,7 @@ class Fluid:
         text += "Composition: \n{:20}|{:<15}|{:<15}|{:<15}|{:<15}|{:<15}|\n".format("Component", "Mass, kg", "MassFrac, -", "Moles, mol", "MoleFrac, -", "In Phase")
         text += "--------------------+---------------+---------------+---------------+---------------+---------------+\n"
         for i, comp in enumerate(total.components):
-            text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|{:>15}\n".format(comp.name, total.mass[comp], total.massfrac[i], total.moles[comp], total.molefrac[i], comp.value.phase.name)
+            text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|{:>15}|\n".format(comp.name, total.mass[comp], total.massfrac[i], total.moles[comp], total.molefrac[i], comp.value.phase.name)
         text += "--------------------+---------------+---------------+---------------+---------------+---------------+\n"
 
         text += "\n"
