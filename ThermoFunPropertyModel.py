@@ -155,6 +155,7 @@ class ThermoFunProperties:
                     if properties.volume.val > 0:
                         volume += properties.volume.val * phase.mass[comp]
                 except RuntimeError:
+                    # TODO - this is not particularly neat... I should compute their properties somehow... Usually (aq) species
                     comp_not_calculated.append(comp)
 
         total_mass = sum([phase.mass[i] for i in phase.mass])

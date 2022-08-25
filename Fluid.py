@@ -315,7 +315,7 @@ class Fluid:
 
     def cullComponents(self, moleLimit=1e-15):
         components = [comp for comp in self.total.components if self.total.moles[comp] > moleLimit]
-        composition = [self.total.moles[comp] for comp in components]
+        composition = [self.total.mass[comp] for comp in components]
 
         self.reset()
 
@@ -323,7 +323,7 @@ class Fluid:
 
     def cullPhase(self, phaseType):
         components = [comp for comp in self.total.components if comp.value.phase != phaseType]
-        composition = [self.total.moles[comp] for comp in components]
+        composition = [self.total.mass[comp] for comp in components]
 
         self.reset()
 

@@ -298,7 +298,7 @@ class ReaktoroPartition:
         mix = rkt.Material(system)
         for i in range(len(fluid.total.components)):
             comp = fluid.total.components[i]
-            mix.add(comp.value.alias["RKT"], fluid.total.massfrac[i], "kg")
+            mix.add(comp.value.alias["RKT"], fluid.total.mass[comp], "kg")
 
         if options.speciesMode == ReaktoroPartitionOptions.SpeciesMode.ALL:
             # this is a total fudge....
