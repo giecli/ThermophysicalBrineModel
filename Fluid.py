@@ -125,12 +125,15 @@ class Fluid:
             self.mineral.add_component(comp, mass, moles, update=update)
             self.total.phases[PhaseType.MINERAL] = self.mineral
 
+            return
+
         if phase == PhaseType.ELEMENT:
             self.element.add_component(comp, mass, moles, update=update)
             self.total.phases[PhaseType.ELEMENT] = self.element
 
             return
 
+        # TODO for some reason it fails when I run it as is... pls fix
         raise Error("\n\nThe component's native phase is not recognised. Component:{}".format(component))
 
     def addComponents(self, components: List[Comp], composition: List[float]) -> NoReturn:
@@ -283,17 +286,55 @@ class Fluid:
             text += "Properties: \n"
             text += "Pressure: {} Pa\n".format(self.total.props["P"])
             text += "Temperature: {} K\n".format(self.total.props["T"])
-            text += "{:20}|{:<15}|{:<18}|{:<15}|{:<15}|\n".format("Phase", "Enthalpy, kJ/kg", "Entropy, kJ/kg/K", "Rho, kg/m3", "Mass, kg")
-            text += "--------------------+-----------------+----------------+---------------+---------------+\n"
+            text += "{:20}|{:<15}|{:<18}|{:<15}|{:<15}|{:<15}|\n".format("Phase", "Enthalpy, kJ/kg", "Entropy, kJ/kg/K", "Rho, kg/m3", "Volume, m3/kg", "Mass, kg")
+            text += "--------------------+-----------------+----------------+---------------+---------------+---------------+\n"
             if self.aqueous.components:
-                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.aqueous.phase.name, self.aqueous.props["h"], self.aqueous.props["s"], self.aqueous.props["rho"], self.aqueous.props["m"])
+                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|{:15.3e}|\n".format(self.aqueous.phase.name, self.aqueous.props["h"], self.aqueous.props["s"], self.aqueous.props["rho"], self.aqueous.props["v"], self.aqueous.props["m"])
             if self.gaseous.components:
-                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.gaseous.phase.name, self.gaseous.props["h"], self.gaseous.props["s"], self.gaseous.props["rho"], self.gaseous.props["m"])
+                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|{:15.3e}|\n".format(self.gaseous.phase.name, self.gaseous.props["h"], self.gaseous.props["s"], self.gaseous.props["rho"], self.gaseous.props["v"], self.gaseous.props["m"])
             if self.mineral.components:
-                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.mineral.phase.name, self.mineral.props["h"], self.mineral.props["s"], self.mineral.props["rho"], self.mineral.props["m"])
-            text += "--------------------+-----------------+----------------+---------------+---------------+\n"
-            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|\n".format(self.total.phase.name, self.total.props["h"], self.total.props["s"], self.total.props["rho"], self.total.props["m"])
-            text += "--------------------+-----------------+----------------+---------------+---------------+\n"
+                text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|{:15.3e}|\n".format(self.mineral.phase.name, self.mineral.props["h"], self.mineral.props["s"], self.mineral.props["rho"], self.mineral.props["v"], self.mineral.props["m"])
+            text += "--------------------+-----------------+----------------+---------------+---------------+---------------+\n"
+            text += "{:20}|{:15.3e}|{:18.3e}|{:15.3e}|{:15.3e}|{:15.3e}|\n".format(self.total.phase.name, self.total.props["h"], self.total.props["s"], self.total.props["rho"], self.total.props["v"], self.total.props["m"])
+            text += "--------------------+-----------------+----------------+---------------+---------------+---------------+\n"
+
+            if self.total.props.NotCalculated:
+                txt = ""
+                mass = 0
+                for i in self.total.props.NotCalculated:
+                    txt += i.value.name + ", "
+                    mass += self.total.mass[i]
+                txt = txt[:-2]
+
+                text += "The following had to be excluded: {}\n".format(txt)
+                text += "This corresponds to a mass of {:.4e} kg or {:.4e} % of the total".format(mass, 100*mass/self.total.props["m"])
+
         else:
             text += "Properties not yet calculated"
         return text
+
+    def cullComponents(self, moleLimit=1e-15):
+        components = [comp for comp in self.total.components if self.total.moles[comp] > moleLimit]
+        composition = [self.total.moles[comp] for comp in components]
+
+        self.reset()
+
+        self.addComponents(components, composition)
+
+    def cullPhase(self, phaseType):
+        components = [comp for comp in self.total.components if comp.value.phase != phaseType]
+        composition = [self.total.moles[comp] for comp in components]
+
+        self.reset()
+
+        self.addComponents(components, composition)
+
+    def reset(self):
+
+        self.total = TotalPhase()
+        self.aqueous = AqueousPhase()
+        self.liquid = LiquidPhase()
+        self.gaseous = GaseousPhase()
+        self.mineral = MineralPhase()
+        self.element = ElementPhase()
+

@@ -111,12 +111,15 @@ class PropertyModel:
         entropy = 0
         volume = 0.
         mass = 0
+        comp_not_calculated = []
         for phase in fluid.total.phases:
             phase = fluid.total.phases[phase]
             enthalpy += phase.props["h"] * phase.props["m"]
             entropy += phase.props["s"] * phase.props["m"]
             volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
             mass += phase.props["m"]
+            if phase.props["NotCalculated"]:
+                comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
 
         total_mass = sum([fluid.total.mass[i] for i in fluid.total.mass])
         if (total_mass - mass)/total_mass > 1e-3:
@@ -127,8 +130,10 @@ class PropertyModel:
                  "h": enthalpy / total_mass,
                  "s": entropy / total_mass,
                  "rho": total_mass / (volume + 1e-6),
-                 "m": total_mass
-                 }
+                 "v": volume / total_mass,
+                 "m": total_mass,
+                 "NotCalculated": comp_not_calculated}
+
         fluid.total.props = PhaseProperties(props)
         fluid.total.props_calculated = True
 

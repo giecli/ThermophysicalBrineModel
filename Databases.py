@@ -1691,6 +1691,113 @@ class Comp(Enum):
     Mg_But_2_aq = Species("Mg(But)2(aq)", None, ["Mg", "C", "H", "O"], 0.19849936, 0.0, PhaseType.AQUEOUS)
     H4SiO4_aq = Species("H4SiO4(aq)", None, ["Si", "O", "H"], 0.09611486, 0.0, PhaseType.AQUEOUS)
 
+    # reaktoro elements
+    H = Species("H", None, ["H"], 0.001007940, +0, PhaseType.ELEMENT)
+    He = Species("He", None, ["He"], 0.004002602, +0, PhaseType.ELEMENT)
+    Li = Species("Li", None, ["Li"], 0.006941000, +0, PhaseType.ELEMENT)
+    Be = Species("Be", None, ["Be"], 0.009012182, +0, PhaseType.ELEMENT)
+    B = Species("B", None, ["B"], 0.010811000, +0, PhaseType.ELEMENT)
+    C = Species("C", None, ["C"], 0.012010700, +0, PhaseType.ELEMENT)
+    N = Species("N", None, ["N"], 0.014006700, +0, PhaseType.ELEMENT)
+    O = Species("O", None, ["O"], 0.015999400, +0, PhaseType.ELEMENT)
+    F = Species("F", None, ["F"], 0.018998403, +0, PhaseType.ELEMENT)
+    Ne = Species("Ne", None, ["Ne"], 0.020179700, +0, PhaseType.ELEMENT)
+    Na = Species("Na", None, ["Na"], 0.022989770, +0, PhaseType.ELEMENT)
+    Mg = Species("Mg", None, ["Mg"], 0.024305000, +0, PhaseType.ELEMENT)
+    Al = Species("Al", None, ["Al"], 0.026981538, +0, PhaseType.ELEMENT)
+    Si = Species("Si", None, ["Si"], 0.028085500, +0, PhaseType.ELEMENT)
+    P = Species("P", None, ["P"], 0.030973761, +0, PhaseType.ELEMENT)
+    S = Species("S", None, ["S"], 0.032065000, +0, PhaseType.ELEMENT)
+    Cl = Species("Cl", None, ["Cl"], 0.035453000, +0, PhaseType.ELEMENT)
+    K = Species("K", None, ["K"], 0.039098300, +0, PhaseType.ELEMENT)
+    Ar = Species("Ar", None, ["Ar"], 0.039948000, +0, PhaseType.ELEMENT)
+    Ca = Species("Ca", None, ["Ca"], 0.040078000, +0, PhaseType.ELEMENT)
+    Sc = Species("Sc", None, ["Sc"], 0.044955910, +0, PhaseType.ELEMENT)
+    Ti = Species("Ti", None, ["Ti"], 0.047867000, +0, PhaseType.ELEMENT)
+    V = Species("V", None, ["V"], 0.050941500, +0, PhaseType.ELEMENT)
+    Cr = Species("Cr", None, ["Cr"], 0.051996100, +0, PhaseType.ELEMENT)
+    Mn = Species("Mn", None, ["Mn"], 0.054938050, +0, PhaseType.ELEMENT)
+    Fe = Species("Fe", None, ["Fe"], 0.055845000, +0, PhaseType.ELEMENT)
+    Ni = Species("Ni", None, ["Ni"], 0.058693400, +0, PhaseType.ELEMENT)
+    Co = Species("Co", None, ["Co"], 0.058933200, +0, PhaseType.ELEMENT)
+    Cu = Species("Cu", None, ["Cu"], 0.063546000, +0, PhaseType.ELEMENT)
+    Zn = Species("Zn", None, ["Zn"], 0.065409000, +0, PhaseType.ELEMENT)
+    Ga = Species("Ga", None, ["Ga"], 0.069723000, +0, PhaseType.ELEMENT)
+    Ge = Species("Ge", None, ["Ge"], 0.072640000, +0, PhaseType.ELEMENT)
+    As = Species("As", None, ["As"], 0.074921600, +0, PhaseType.ELEMENT)
+    Se = Species("Se", None, ["Se"], 0.078960000, +0, PhaseType.ELEMENT)
+    Br = Species("Br", None, ["Br"], 0.079904000, +0, PhaseType.ELEMENT)
+    Kr = Species("Kr", None, ["Kr"], 0.083798000, +0, PhaseType.ELEMENT)
+    Rb = Species("Rb", None, ["Rb"], 0.085467800, +0, PhaseType.ELEMENT)
+    Sr = Species("Sr", None, ["Sr"], 0.087620000, +0, PhaseType.ELEMENT)
+    Y = Species("Y", None, ["Y"], 0.088905850, +0, PhaseType.ELEMENT)
+    Zr = Species("Zr", None, ["Zr"], 0.091224000, +0, PhaseType.ELEMENT)
+    Nb = Species("Nb", None, ["Nb"], 0.092906380, +0, PhaseType.ELEMENT)
+    Mo = Species("Mo", None, ["Mo"], 0.095940000, +0, PhaseType.ELEMENT)
+    Tc = Species("Tc", None, ["Tc"], 0.098000000, +0, PhaseType.ELEMENT)
+    Ru = Species("Ru", None, ["Ru"], 0.101070000, +0, PhaseType.ELEMENT)
+    Rh = Species("Rh", None, ["Rh"], 0.102905500, +0, PhaseType.ELEMENT)
+    Pd = Species("Pd", None, ["Pd"], 0.106420000, +0, PhaseType.ELEMENT)
+    Ag = Species("Ag", None, ["Ag"], 0.107868200, +0, PhaseType.ELEMENT)
+    Cd = Species("Cd", None, ["Cd"], 0.112411000, +0, PhaseType.ELEMENT)
+    In = Species("In", None, ["In"], 0.114818000, +0, PhaseType.ELEMENT)
+    Sn = Species("Sn", None, ["Sn"], 0.118710000, +0, PhaseType.ELEMENT)
+    Sb = Species("Sb", None, ["Sb"], 0.121760000, +0, PhaseType.ELEMENT)
+    I = Species("I", None, ["I"], 0.126904470, +0, PhaseType.ELEMENT)
+    Te = Species("Te", None, ["Te"], 0.127600000, +0, PhaseType.ELEMENT)
+    Xe = Species("Xe", None, ["Xe"], 0.131293000, +0, PhaseType.ELEMENT)
+    Cs = Species("Cs", None, ["Cs"], 0.132905450, +0, PhaseType.ELEMENT)
+    Ba = Species("Ba", None, ["Ba"], 0.137327000, +0, PhaseType.ELEMENT)
+    La = Species("La", None, ["La"], 0.138905500, +0, PhaseType.ELEMENT)
+    Ce = Species("Ce", None, ["Ce"], 0.140116000, +0, PhaseType.ELEMENT)
+    Pr = Species("Pr", None, ["Pr"], 0.140907650, +0, PhaseType.ELEMENT)
+    Nd = Species("Nd", None, ["Nd"], 0.144240000, +0, PhaseType.ELEMENT)
+    Pm = Species("Pm", None, ["Pm"], 0.145000000, +0, PhaseType.ELEMENT)
+    Sm = Species("Sm", None, ["Sm"], 0.150360000, +0, PhaseType.ELEMENT)
+    Eu = Species("Eu", None, ["Eu"], 0.151964000, +0, PhaseType.ELEMENT)
+    Gd = Species("Gd", None, ["Gd"], 0.157250000, +0, PhaseType.ELEMENT)
+    Tb = Species("Tb", None, ["Tb"], 0.158925340, +0, PhaseType.ELEMENT)
+    Dy = Species("Dy", None, ["Dy"], 0.162500000, +0, PhaseType.ELEMENT)
+    Ho = Species("Ho", None, ["Ho"], 0.164930320, +0, PhaseType.ELEMENT)
+    Er = Species("Er", None, ["Er"], 0.167259000, +0, PhaseType.ELEMENT)
+    Tm = Species("Tm", None, ["Tm"], 0.168934210, +0, PhaseType.ELEMENT)
+    Yb = Species("Yb", None, ["Yb"], 0.173040000, +0, PhaseType.ELEMENT)
+    Lu = Species("Lu", None, ["Lu"], 0.174967000, +0, PhaseType.ELEMENT)
+    Hf = Species("Hf", None, ["Hf"], 0.178490000, +0, PhaseType.ELEMENT)
+    Ta = Species("Ta", None, ["Ta"], 0.180947900, +0, PhaseType.ELEMENT)
+    W = Species("W", None, ["W"], 0.183840000, +0, PhaseType.ELEMENT)
+    Re = Species("Re", None, ["Re"], 0.186207000, +0, PhaseType.ELEMENT)
+    Os = Species("Os", None, ["Os"], 0.190230000, +0, PhaseType.ELEMENT)
+    Ir = Species("Ir", None, ["Ir"], 0.192217000, +0, PhaseType.ELEMENT)
+    Pt = Species("Pt", None, ["Pt"], 0.195078000, +0, PhaseType.ELEMENT)
+    Au = Species("Au", None, ["Au"], 0.196966550, +0, PhaseType.ELEMENT)
+    Hg = Species("Hg", None, ["Hg"], 0.200590000, +0, PhaseType.ELEMENT)
+    Tl = Species("Tl", None, ["Tl"], 0.204383300, +0, PhaseType.ELEMENT)
+    Pb = Species("Pb", None, ["Pb"], 0.207200000, +0, PhaseType.ELEMENT)
+    Bi = Species("Bi", None, ["Bi"], 0.208980380, +0, PhaseType.ELEMENT)
+    Po = Species("Po", None, ["Po"], 0.209000000, +0, PhaseType.ELEMENT)
+    At = Species("At", None, ["At"], 0.210000000, +0, PhaseType.ELEMENT)
+    Rn = Species("Rn", None, ["Rn"], 0.222000000, +0, PhaseType.ELEMENT)
+    Fr = Species("Fr", None, ["Fr"], 0.223000000, +0, PhaseType.ELEMENT)
+    Ra = Species("Ra", None, ["Ra"], 0.226000000, +0, PhaseType.ELEMENT)
+    Ac = Species("Ac", None, ["Ac"], 0.227000000, +0, PhaseType.ELEMENT)
+    Pa = Species("Pa", None, ["Pa"], 0.231035880, +0, PhaseType.ELEMENT)
+    Th = Species("Th", None, ["Th"], 0.232038100, +0, PhaseType.ELEMENT)
+    Np = Species("Np", None, ["Np"], 0.237000000, +0, PhaseType.ELEMENT)
+    U = Species("U", None, ["U"], 0.238028910, +0, PhaseType.ELEMENT)
+    Am = Species("Am", None, ["Am"], 0.243000000, +0, PhaseType.ELEMENT)
+    Pu = Species("Pu", None, ["Pu"], 0.244000000, +0, PhaseType.ELEMENT)
+    Bk = Species("Bk", None, ["Bk"], 0.247000000, +0, PhaseType.ELEMENT)
+    Cm = Species("Cm", None, ["Cm"], 0.247000000, +0, PhaseType.ELEMENT)
+    Cf = Species("Cf", None, ["Cf"], 0.251000000, +0, PhaseType.ELEMENT)
+    Es = Species("Es", None, ["Es"], 0.252000000, +0, PhaseType.ELEMENT)
+    Fm = Species("Fm", None, ["Fm"], 0.257000000, +0, PhaseType.ELEMENT)
+    Md = Species("Md", None, ["Md"], 0.258000000, +0, PhaseType.ELEMENT)
+    No = Species("No", None, ["No"], 0.259000000, +0, PhaseType.ELEMENT)
+    Rf = Species("Rf", None, ["Rf"], 0.261000000, +0, PhaseType.ELEMENT)
+    Lr = Species("Lr", None, ["Lr"], 0.262000000, +0, PhaseType.ELEMENT)
+
+
 
 class LookUp:
     """
@@ -1702,6 +1809,8 @@ class LookUp:
         a dictionary to translate Reaktoro species names into a Component object
     coolpropToComp : Dict
         a dictionary to translate CoolProp species names into a Component object
+
+    # TODO should I add the elements to the look up Dicts??
     """
 
     reaktoroToComp = {
@@ -3446,11 +3555,12 @@ class LookUp:
         return self
 
 
-test = LookUp().generate()
-
-txt = ""
-for i in test.reaktoroToComp:
-    txt += "\"" + i + "\": Comp." + test.reaktoroToComp[i].name + ",\n"
-
-
-print(txt)
+# this is for generating the LookUp Dictionary
+# test = LookUp().generate()
+#
+# txt = ""
+# for i in test.reaktoroToComp:
+#     txt += "\"" + i + "\": Comp." + test.reaktoroToComp[i].name + ",\n"
+#
+#
+# print(txt)

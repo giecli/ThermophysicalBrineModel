@@ -237,7 +237,7 @@ class ReaktoroPartitionOptions:
             initialises the ReaktoroPartitionOptions
         """
         self.database = self.Database.SUPCRTBL
-        self.speciesMode = self.SpeciesMode.SELECTED
+        self.speciesMode = self.SpeciesMode.ALL
 
         self.aqueousActivityModel = self.AqueousActivityModels.IDEAL
         self.aqueousCO2ActivityModel = self.AqueousCO2ActivityModels.NONE
@@ -295,33 +295,20 @@ class ReaktoroPartition:
 
         system = rkt.ChemicalSystem(db, aqueous, gaseous, mineral)
 
-        state = rkt.ChemicalState(system)
-        state_mass = 0
-        material = rkt.Material(system)
-        material_mass = 0
+        mix = rkt.Material(system)
         for i in range(len(fluid.total.components)):
             comp = fluid.total.components[i]
-            if comp.value.phase == PhaseType.ELEMENT:
-                material.add(comp.value.alias["RKT"], fluid.total.massfrac[i], "kg")
-                material_mass += fluid.total.massfrac[i]
-            else:
-                state.set(comp.value.alias["RKT"], fluid.total.massfrac[i], "kg")
-
-        # state = rkt.ChemicalState(system)
-        # for i in range(len(fluid.total.components)):
-        #     state.set(fluid.total.components[i].value.alias["RKT"], fluid.total.massfrac[i], "kg")
+            mix.add(comp.value.alias["RKT"], fluid.total.massfrac[i], "kg")
 
         if options.speciesMode == ReaktoroPartitionOptions.SpeciesMode.ALL:
             # this is a total fudge....
             if "O" in elements:
-                state.set("O2(aq)", 1e-15, "kg")
+                mix.add("O2(aq)", 1e-15, "kg")
             if "H" in elements:
-                state.set("H2(aq)", 1e-15, "kg")
+                mix.add("H2(aq)", 1e-15, "kg")
 
-        state.pressure(P, "Pa")
-        state.temperature(T, "K")
-
-        res = rkt.equilibrate(state)
+        state = mix.equilibrate(T, "K", P, "Pa")
+        res = mix.result()
 
         if options.strictSucess:
             assert res.optima.succeeded
@@ -337,6 +324,8 @@ class ReaktoroPartition:
             elif phase.name() == "GaseousPhase":
                 key = PhaseType.GASEOUS
             elif phase.name() == "MineralPhase":
+                key = PhaseType.MINERAL
+            elif phase.aggregateState().name == "Solid":
                 key = PhaseType.MINERAL
             else:
                 raise Error("\n\n Invalid phase encountered")

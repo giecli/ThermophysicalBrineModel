@@ -89,7 +89,9 @@ class PhaseProperties:
                 text string that encompasses all relevant information about the Fluid object
         """
 
-        text = "P: {:.4e} Pa\tT: {} K\th: {:.4e} kJ/kg\t\ts: {:.4e} kJ/kg/K\trho: {:.4e} kg/m3\tm: {:.4e} kg".format(self.P, self.T, self.h, self.s, self.rho, self.m)
+        text = "P: {:.4e} Pa\tT: {} K\th: {:.4e} kJ/kg\t\ts: {:.4e} kJ/kg/K\trho: {:.4e} kg/m3\tv: {:.4} m3/kg\tm: {:.4e} kg".format(self.P, self.T, self.h, self.s, self.rho, self.v, self.m)
+        if self.NotCalculated:
+            text += "\nThe following components were not calculated: {}".format(self.NotCalculated)
 
         return text
 

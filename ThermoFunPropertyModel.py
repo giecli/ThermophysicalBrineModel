@@ -127,6 +127,7 @@ class ThermoFunProperties:
         enthalpy = 0
         entropy = 0
         volume = 0
+        comp_not_calculated = []
         for i in range(len(phase.components)):
 
             comp = phase.components[i]
@@ -145,13 +146,16 @@ class ThermoFunProperties:
                 volume += phase.mass[comp] / calc.rhomass()
 
             elif phase.massfrac[i] > options.massfracCutOff:
-                properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])
-                properties0 = engine.thermoPropertiesSubstance(Tref, Pref, comp.value.alias["RKT"])
+                try:
+                    properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])
+                    properties0 = engine.thermoPropertiesSubstance(Tref, Pref, comp.value.alias["RKT"])
 
-                enthalpy += phase.mass[comp] * (properties.enthalpy.val - properties0.enthalpy.val) / 1e3
-                entropy += phase.mass[comp] * (properties.entropy.val - properties0.entropy.val) / 1e3
-                if properties.volume.val > 0:
-                    volume += properties.volume.val * phase.mass[comp]
+                    enthalpy += phase.mass[comp] * (properties.enthalpy.val - properties0.enthalpy.val) / 1e3
+                    entropy += phase.mass[comp] * (properties.entropy.val - properties0.entropy.val) / 1e3
+                    if properties.volume.val > 0:
+                        volume += properties.volume.val * phase.mass[comp]
+                except RuntimeError:
+                    comp_not_calculated.append(comp)
 
         total_mass = sum([phase.mass[i] for i in phase.mass])
 
@@ -160,7 +164,9 @@ class ThermoFunProperties:
         props["h"] = enthalpy / (total_mass + 1e-6)
         props["s"] = entropy / (total_mass + 1e-6)
         props["rho"] = total_mass / (volume + 1e-6)
+        props["v"] = volume / total_mass
         props["m"] = total_mass
+        props["NotCalculated"] = comp_not_calculated
 
         return props
 

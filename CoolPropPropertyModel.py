@@ -82,7 +82,9 @@ class CoolPropProperties:
             props["h"] = (calc.hmass() - h0) / 1e3
             props["s"] = (calc.smass() - s0) / 1e3
             props["rho"] = calc.rhomass()
+            props["v"] = 1 / calc.rhomass()
             props["m"] = total_mass
+            props["NotCalculated"] = None
 
         return props
 
