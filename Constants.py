@@ -15,5 +15,5 @@ Raises
 Nothing
 """
 
-Pref = 101325  # Pa
-Tref = 298  # K
+Pref = 101325  # the reference pressure in Pa
+Tref = 298  # the reference temperature in K

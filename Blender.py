@@ -1,7 +1,7 @@
 from Fluid import Fluid
 from PropertyModel import PhaseProperties
 
-from typing import List, Union, Dict, Tuple, NoReturn, Optional
+from typing import Union, Optional
 
 
 class Blender:
@@ -19,7 +19,7 @@ class Blender:
     """
 
     @staticmethod
-    def blend(fluid1: Fluid, fluid2: Fluid, ratio1to2: Optional[float] = 1.0) -> Fluid:
+    def blend(fluid1: Fluid, fluid2: Fluid, ratio2to1: Optional[float] = 1.0) -> Fluid:
         """
         Mixes two fluids according to a mass-based mixing ration.
 
@@ -29,7 +29,7 @@ class Blender:
             the first Fluid to be mixed
         fluid2 : Fluid
             the second Fluid to be mixed
-        ratio1to2 : Union[float, int]
+        ratio2to1 : Union[float, int]
             the ratio of the mass of fluid2 to the mass of fluid1
 
         Returns
@@ -42,14 +42,18 @@ class Blender:
         Nothing
         """
 
+        # create copies of the component lists of the two fluids
         components1 = [i for i in fluid1.total.components]
         components2 = [i for i in fluid2.total.components]
 
+        # combine the components, omitting any duplicates
         components = list(set(components1 + components2))
 
+        # find the components that do not exist in the parent fluid
         diff1 = list(set(components) - set(components1))
         diff2 = list(set(components) - set(components2))
 
+        # buff out the mass dictionaries of each fluid to also contain the new components
         mass1 = {i:fluid1.total.mass[i] for i in fluid1.total.mass}
         for comp in diff1:
             mass1[comp] = 0
@@ -57,36 +61,50 @@ class Blender:
         for comp in diff2:
             mass2[comp] = 0
 
+        # create the composition list
         composition = [0 for i in components]
         for i, comp in enumerate(components):
-            composition[i] = mass1[comp] + ratio1to2 * mass2[comp]
+            composition[i] = mass1[comp] + ratio2to1 * mass2[comp]
 
+        # create the new fluid from the component and composition lists
         new_fluid = Fluid(components=components, composition=composition)
 
+        # if the properties were calculated for the same pressure and temperature, update the property results
         if fluid1.total.props_calculated and fluid2.total.props_calculated:
             if fluid1.total.props["P"] == fluid2.total.props["P"] and fluid1.total.props["T"] == fluid2.total.props["T"]:
                 props = {"P": fluid1.total.props["P"],
                          "T": fluid1.total.props["T"],
-                         "h": (fluid1.total.props["m"] * fluid1.total.props["h"] + ratio1to2 * fluid2.total.props["m"] * fluid2.total.props["h"])/(fluid1.total.props["m"] + ratio1to2 * fluid2.total.props["m"]),
-                         "s": (fluid1.total.props["m"] * fluid1.total.props["s"] + ratio1to2 * fluid2.total.props["m"] * fluid2.total.props["s"]) / (fluid1.total.props["m"] + ratio1to2 * fluid2.total.props["m"]),
-                         "rho":  (fluid1.total.props["m"] + ratio1to2 * fluid2.total.props["m"]) / ((fluid1.total.props["m"] / (fluid1.total.props["rho"] + 1e-6) )+ (ratio1to2 * fluid2.total.props["m"] / (fluid2.total.props["rho"] + 1e-6))),
-                         "m": fluid1.total.props["m"] + ratio1to2 * fluid2.total.props["m"]
+                         "h": (fluid1.total.props["m"] * fluid1.total.props["h"] + ratio2to1 * fluid2.total.props["m"] * fluid2.total.props["h"])/(fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]),
+                         "s": (fluid1.total.props["m"] * fluid1.total.props["s"] + ratio2to1 * fluid2.total.props["m"] * fluid2.total.props["s"]) / (fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]),
+                         "rho":  (fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]) / ((fluid1.total.props["m"] / (fluid1.total.props["rho"] + 1e-6) ) + (ratio2to1 * fluid2.total.props["m"] / (fluid2.total.props["rho"] + 1e-6))),
+                         "v": (fluid1.total.props["m"] * fluid1.total.props["v"] + ratio2to1 * fluid2.total.props["m"] * fluid2.total.props["v"])/(fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]),
+                         "m": fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"],
+                         "NotCalculated": fluid1.total.props["NotCalculated"] + fluid2.total.props["NotCalculated"]
                          }
+
+                # create new phase properties
                 new_fluid.total.props = PhaseProperties(props)
+
+                # set flag
                 new_fluid.total.props_calculated = True
 
+                # repeat for all other phases
                 for phase in new_fluid.total.phases:
 
+                    # check if the parent fluids share a given phase
                     if phase in fluid1.total.phases and phase in fluid2.total.phases:
                         phase1 = fluid1.total.phases[phase]
                         phase2 = fluid2.total.phases[phase]
 
+                        # calculate the combined properties
                         props = {"P": fluid1.total.props["P"],
                                  "T": fluid1.total.props["T"],
-                                 "h": (phase1.props["m"] * phase1.props["h"] + ratio1to2 * phase2.props["m"] * phase2.props["h"]) / (phase1.props["m"] + ratio1to2 * phase2.props["m"]),
-                                 "s": (phase1.props["m"] * phase1.props["s"] + ratio1to2 * phase2.props["m"] * phase2.props["s"]) / (phase1.props["m"] + ratio1to2 * phase2.props["m"]),
-                                 "rho": (phase1.props["m"] + ratio1to2 * phase2.props["m"]) / ((phase1.props["m"] / (phase1.props["rho"] + 1e-6)) + (ratio1to2 * phase2.props["m"] / (phase2.props["rho"] + 1e-6))),
-                                 "m": phase1.props["m"] + ratio1to2 * phase2.props["m"]
+                                 "h": (phase1.props["m"] * phase1.props["h"] + ratio2to1 * phase2.props["m"] * phase2.props["h"]) / (phase1.props["m"] + ratio2to1 * phase2.props["m"]),
+                                 "s": (phase1.props["m"] * phase1.props["s"] + ratio2to1 * phase2.props["m"] * phase2.props["s"]) / (phase1.props["m"] + ratio2to1 * phase2.props["m"]),
+                                 "rho": (phase1.props["m"] + ratio2to1 * phase2.props["m"]) / ((phase1.props["m"] / (phase1.props["rho"] + 1e-6)) + (ratio2to1 * phase2.props["m"] / (phase2.props["rho"] + 1e-6))),
+                                 "v": (phase1.props["m"] * phase1.props["v"] + ratio2to1 * phase2.props["m"] * phase2.props["v"]) / (phase1.props["m"] + ratio2to1 * phase2.props["m"]),
+                                 "m": phase1.props["m"] + ratio2to1 * phase2.props["m"],
+                                 "NotCalculated": phase1.props["NotCalculated"] + phase2.props["NotCalculated"]
                                  }
                     else:
                         if phase in fluid1.total.phases:
@@ -99,10 +117,16 @@ class Blender:
                                  "h": phase_.props["h"],
                                  "s": phase_.props["s"],
                                  "rho": phase_.props["rho"],
-                                 "m": phase_.props["m"]
+                                 "v": phase_.props["v"],
+                                 "m": phase_.props["m"],
+                                 "NotCalculated": phase_.props["NotCalculated"]
                                  }
 
+                    # create new phase properties
                     new_fluid.total.phases[phase].props = PhaseProperties(props)
+
+                    # set flag
                     new_fluid.total.phases[phase].props_calculated = True
 
+        # return the new fluid
         return new_fluid
