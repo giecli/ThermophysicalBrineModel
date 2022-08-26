@@ -237,7 +237,7 @@ class ReaktoroPartitionOptions:
             initialises the ReaktoroPartitionOptions
         """
         self.database = self.Database.SUPCRTBL
-        self.speciesMode = self.SpeciesMode.ALL
+        self.speciesMode = self.SpeciesMode.SELECTED
 
         self.aqueousActivityModel = self.AqueousActivityModels.IDEAL
         self.aqueousCO2ActivityModel = self.AqueousCO2ActivityModels.NONE

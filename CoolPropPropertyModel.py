@@ -52,7 +52,7 @@ class CoolPropProperties:
         Nothing
         """
 
-        props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0}
+        props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "v": 0, "m": 0, "NotCalculated": []}
 
         components = ""
         mass_fracs = []
@@ -61,6 +61,7 @@ class CoolPropProperties:
                 components += phase.components[i].value.alias["CP"] + "&"
                 mass_fracs.append(phase.massfrac[i])
         components = components[:-1]
+        mass_fracs = [i/sum(mass_fracs)  for i in mass_fracs]
 
         if components:
             calc = cp.AbstractState("?", components)
@@ -70,19 +71,42 @@ class CoolPropProperties:
 
                 calc.set_mass_fractions(mass_fracs)
 
-            calc.update(cp.PT_INPUTS, Pref, Tref)
-            h0 = calc.hmass()
-            s0 = calc.smass()
+            try:
+                calc.update(cp.PT_INPUTS, Pref, Tref)
+                h0 = calc.hmass()
+                s0 = calc.smass()
 
-            calc.update(cp.PT_INPUTS, P, T)
+                calc.update(cp.PT_INPUTS, P, T)
+
+                enthalpy = (calc.hmass() - h0)
+                entropy = (calc.smass() - s0)
+                volume = 1 / calc.rhomass()
+
+            except ValueError:
+                components = components.split("&")
+
+                enthalpy = 0
+                entropy = 0
+                volume = 0
+                for i, comp in enumerate(components):
+                    calc = cp.AbstractState("?", comp)
+                    calc.update(cp.PT_INPUTS, Pref, Tref)
+                    h0 = calc.hmass()
+                    s0 = calc.smass()
+
+                    calc.update(cp.PT_INPUTS, P, T)
+
+                    enthalpy += (calc.hmass() - h0) * mass_fracs[i]
+                    entropy += (calc.smass() - s0) * mass_fracs[i]
+                    volume += mass_fracs[i] / calc.rhomass()
+
             total_mass = sum([phase.mass[i] for i in phase.mass])
-
             props["P"] = calc.p()
             props["T"] = calc.T()
-            props["h"] = (calc.hmass() - h0) / 1e3
-            props["s"] = (calc.smass() - s0) / 1e3
-            props["rho"] = calc.rhomass()
-            props["v"] = 1 / calc.rhomass()
+            props["h"] = enthalpy / 1e3
+            props["s"] = entropy / 1e3
+            props["rho"] = 1 / volume
+            props["v"] = volume
             props["m"] = total_mass
             props["NotCalculated"] = None
 

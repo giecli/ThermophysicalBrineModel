@@ -1,7 +1,7 @@
 from Fluid import Fluid
 from Databases import Comp
-from PartitionModel import Partition
-from PropertyModel import PropertyModel
+from PartitionModel import Partition, PartitionModelOptions
+from PropertyModel import PropertyModel, PropertyModelOptions
 from Phases import PhaseType
 from Blender import Blender
 

@@ -122,7 +122,7 @@ class ThermoFunProperties:
         database = options.databaseHomeDir + "/" + options.database.value
         engine = fun.ThermoEngine(database)
 
-        props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0}
+        props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "v": 0, "m": 0, "NotCalculated": []}
 
         enthalpy = 0
         entropy = 0
@@ -150,10 +150,11 @@ class ThermoFunProperties:
                     properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])
                     properties0 = engine.thermoPropertiesSubstance(Tref, Pref, comp.value.alias["RKT"])
 
-                    enthalpy += phase.mass[comp] * (properties.enthalpy.val - properties0.enthalpy.val) / 1e3
-                    entropy += phase.mass[comp] * (properties.entropy.val - properties0.entropy.val) / 1e3
-                    if properties.volume.val > 0:
-                        volume += properties.volume.val * phase.mass[comp]
+                    enthalpy += phase.moles[comp] * (properties.enthalpy.val - properties0.enthalpy.val) / 1e3  # the units of enthalpy are J/mol
+                    entropy += phase.moles[comp] * (properties.entropy.val - properties0.entropy.val) / 1e3  # the units of entropy are J/mol
+                    # if properties.volume.val > 0:
+                        # vol = properties.volume.val
+                    volume += properties.volume.val * 1e-5 * phase.moles[comp]  # the units of volume are in J/bar
                 except RuntimeError:
                     # TODO - this is not particularly neat... I should compute their properties somehow... Usually (aq) species
                     comp_not_calculated.append(comp)
