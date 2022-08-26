@@ -4,7 +4,7 @@ from ErrorHandling import Error, InputError
 from Phases import Phase
 
 import copy
-from typing import List, Union, Dict, Tuple, NoReturn, Optional
+from typing import List, Union, NoReturn, Optional
 
 
 class Fluid:
@@ -133,7 +133,6 @@ class Fluid:
 
             return
 
-        # TODO for some reason it fails when I run it as is... pls fix
         raise Error("\n\nThe component's native phase is not recognised. Component:{}".format(component))
 
     def addComponents(self, components: List[Comp], composition: List[float]) -> NoReturn:
@@ -278,7 +277,8 @@ class Fluid:
         text += "Composition: \n{:20}|{:<15}|{:<15}|{:<15}|{:<15}|{:<15}|\n".format("Component", "Mass, kg", "MassFrac, -", "Moles, mol", "MoleFrac, -", "In Phase")
         text += "--------------------+---------------+---------------+---------------+---------------+---------------+\n"
         for i, comp in enumerate(total.components):
-            text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|{:>15}|\n".format(comp.name, total.mass[comp], total.massfrac[i], total.moles[comp], total.molefrac[i], comp.value.phase.name)
+            if total.moles[comp] > 1e-10:
+                text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|{:>15}|\n".format(comp.name, total.mass[comp], total.massfrac[i], total.moles[comp], total.molefrac[i], comp.value.phase.name)
         text += "--------------------+---------------+---------------+---------------+---------------+---------------+\n"
 
         text += "\n"
@@ -337,4 +337,6 @@ class Fluid:
         self.gaseous = GaseousPhase()
         self.mineral = MineralPhase()
         self.element = ElementPhase()
+
+
 

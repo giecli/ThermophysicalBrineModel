@@ -2,7 +2,7 @@ from Constants import *
 from Phases import Phase
 
 import CoolProp as cp
-from typing import List, Union, Dict, Tuple, NoReturn
+from typing import Dict
 
 
 class CoolPropPropertyOptions:
@@ -29,7 +29,7 @@ class CoolPropProperties:
     """
 
     @staticmethod
-    def calc(phase: Phase, P: Union[int, float], T: Union[int, float], options: CoolPropPropertyOptions) -> Dict:
+    def calc(phase: Phase, P: float, T: float, options: CoolPropPropertyOptions) -> Dict:
         """
         Calculates the properties of a phase (gaseous) at a given temperature and pressure.
 
@@ -100,7 +100,6 @@ class CoolPropProperties:
             except ValueError:
                 # if for some reason CoolProp cannot calculate the mixture, perform the calculations individually and
                 # then recombine the results
-                # TODO do I need to use the partial pressure instead of the total pressure??? I think it ought to be the partial pressure...
 
                 # split the component string into its components
                 components = components.split("&")

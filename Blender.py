@@ -96,6 +96,14 @@ class Blender:
                         phase1 = fluid1.total.phases[phase]
                         phase2 = fluid2.total.phases[phase]
 
+                        not_calculated = []
+                        if phase1.props["NotCalculated"] is not None and phase2.props["NotCalculated"] is not None:
+                            not_calculated = phase1.props["NotCalculated"] + phase2.props["NotCalculated"]
+                        elif phase1.props["NotCalculated"] is not None:
+                            not_calculated = phase1.props["NotCalculated"]
+                        else:
+                            not_calculated = phase2.props["NotCalculated"]
+
                         # calculate the combined properties
                         props = {"P": fluid1.total.props["P"],
                                  "T": fluid1.total.props["T"],
@@ -104,7 +112,7 @@ class Blender:
                                  "rho": (phase1.props["m"] + ratio2to1 * phase2.props["m"]) / ((phase1.props["m"] / (phase1.props["rho"] + 1e-6)) + (ratio2to1 * phase2.props["m"] / (phase2.props["rho"] + 1e-6))),
                                  "v": (phase1.props["m"] * phase1.props["v"] + ratio2to1 * phase2.props["m"] * phase2.props["v"]) / (phase1.props["m"] + ratio2to1 * phase2.props["m"]),
                                  "m": phase1.props["m"] + ratio2to1 * phase2.props["m"],
-                                 "NotCalculated": phase1.props["NotCalculated"] + phase2.props["NotCalculated"]
+                                 "NotCalculated": not_calculated
                                  }
                     else:
                         if phase in fluid1.total.phases:
