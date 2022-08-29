@@ -155,19 +155,22 @@ class Phase:
            Creates the Phase object string representation
 
         """
-
+        # print the phase type
         text = "Phase: {}\n\n".format(self.phase)
 
+        # print the components in this phase
         text += "Components:\n"
         for comp in self.components:
             text += "{}, ".format(comp.name)
         text = text[:-2] + "\n\n"
 
+        # print a table of components and their composition in this phase
         text += "Composition: \n{:20}|{:<15}|{:<15}|{:<15}|{:<15}|\n".format("Component", "Mass, kg", "MassFrac, -", "Moles, mol", "MoleFrac, -")
         text += "--------------------+---------------+---------------+---------------+---------------+\n"
         for i, comp in enumerate(self.components):
             text += "{:20}|{:15.3e}|{:15.3e}|{:15.3e}|{:15.3e}|\n".format(comp.name, self.mass[comp], self.massfrac[i], self.moles[comp], self.molefrac[i])
 
+        # print the phase properties
         text += "\nProperties: " + str(self.props) + "\n"
 
         return text
@@ -192,7 +195,9 @@ class Phase:
             NoReturn
         """
 
+        # checks if component already exists in the phase
         if comp in self.components:
+            # add the mass and moles to
             self.mass[comp] += mass
             self.moles[comp] += moles
         else:
@@ -200,12 +205,16 @@ class Phase:
             self.mass[comp] = mass
             self.moles[comp] = moles
 
-            if len(self.elements) == 0:
+            # update the list of elements
+            if len(self.elements) > 0:
+                self.elements.update(comp.value.elements)
+            else:
                 self.elements = {i for i in comp.value.elements}
 
-            self.elements.update(comp.value.elements)
-
+        # resets the flag for the mass and mole fractions being up to date
         self.up_to_date = False
+
+        # if yes, recalculates the mass and mole fractions
         if update:
             self.update()
 
@@ -218,23 +227,23 @@ class Phase:
             NoReturn
         """
 
+        # checks if the mass and mole fractions are already up to date
         if self.up_to_date:
             return
 
+        # calculates the total mass and number of moles
         total_mass = sum(self.mass.values())
         total_moles = sum(self.moles.values())
 
+        # calculates the mass and mole fractions of each species
         self.massfrac = [self.mass[self.components[i]] / (total_mass + 1e-6) for i in range(len(self.components))]
         self.molefrac = [self.moles[self.components[i]] / (total_moles +1e-6) for i in range(len(self.components))]
 
-        self.props = {"P": 0,
-                      "T": 0,
-                      "h": 0,
-                      "s": 0,
-                      "rho": 0,
-                      "m": 0
-                      }
+        # resets the phase properties
+        self.props_calculated = False
+        self.props = PhaseProperties({"P": 0,  "T": 0, "h": 0, "s": 0, "rho": 0, "v": 0, "m": 0, "NotCalculated": []})
 
+        # sets the flag that the mass and mole fractions are up to date
         self.up_to_date = True
 
 
@@ -245,6 +254,8 @@ class LiquidPhase(Phase):
 
     def __init__(self):
         super().__init__()
+
+        # set the phase type
         self.phase = PhaseType.LIQUID
 
 
@@ -255,6 +266,8 @@ class AqueousPhase(Phase):
 
     def __init__(self):
         super().__init__()
+
+        # set the phase type
         self.phase = PhaseType.AQUEOUS
 
 
@@ -265,6 +278,8 @@ class GaseousPhase(Phase):
 
     def __init__(self):
         super().__init__()
+
+        # set the phase type
         self.phase = PhaseType.GASEOUS
 
 
@@ -275,6 +290,8 @@ class MineralPhase(Phase):
 
     def __init__(self):
         super().__init__()
+
+        # set the phase type
         self.phase = PhaseType.MINERAL
 
 
@@ -285,8 +302,9 @@ class ElementPhase(Phase):
 
     def __init__(self):
         super().__init__()
-        self.phase = PhaseType.ELEMENT
 
+        # set the phase type
+        self.phase = PhaseType.ELEMENT
 
 
 class TotalPhase(Phase):
@@ -301,6 +319,8 @@ class TotalPhase(Phase):
 
     def __init__(self):
         super().__init__()
+
+        # set the phase type
         self.phase = PhaseType.TOTAL
         self.phases = {}
 

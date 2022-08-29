@@ -62,18 +62,24 @@ class Species:
             -------
             text:str
         """
+
+        # print the species name
         text = "Species Name: {} \n".format(self.name)
 
+        # print the species phase
         text = text + "Phase: {}\n".format(self.phase.value)
 
+        # print the species aliases
         text = text + "Aliases: \n"
         for alias in self.alias:
             text = text + "\t{}: {}\n".format(alias, self.alias[alias])
 
+        # print the elements in a species
         text = text + "Elements:\n"
         for element in self.elements:
             text = text + "\t{}\n".format(element)
 
+        # print the species molecular weight and charge
         text = text + "Molecular Weight: {} kg/mol\n".format(self.Mr)
         text = text + "Charge: {} \n".format(self.charge)
 

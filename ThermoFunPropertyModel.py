@@ -117,28 +117,34 @@ class ThermoFunProperties:
             Nothing
         """
 
-        # options = options.ThermoFun
-
+        # initialise the ThermoFun database
         database = options.databaseHomeDir + "/" + options.database.value
+
+        # initialise the ThermoFun calculation enginer
         engine = fun.ThermoEngine(database)
 
+        # initialise the property calculation results
         props = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "v": 0, "m": 0, "NotCalculated": []}
 
+        # initialise the phase total properties
         enthalpy = 0
         entropy = 0
         volume = 0
         comp_not_calculated = []
-        for i in range(len(phase.components)):
 
-            comp = phase.components[i]
+        for i, comp in enumerate(phase.components):
 
             if comp == Comp.WATER:
+                # calculate the properties of water using CoolProp
+
                 calc = cp.AbstractState("?", comp.value.alias["CP"])
 
+                # calculate the enthalpy and entropy at the reference conditions
                 calc.update(cp.PT_INPUTS, Pref, Tref)
                 h0 = calc.hmass()
                 s0 = calc.smass()
 
+                # calculate the properties at the temperature and pressure of interest
                 calc.update(cp.PT_INPUTS, P, T)
 
                 enthalpy += phase.mass[comp] * (calc.hmass() - h0) / 1e3
@@ -146,21 +152,27 @@ class ThermoFunProperties:
                 volume += phase.mass[comp] / calc.rhomass()
 
             elif phase.massfrac[i] > options.massfracCutOff:
+
+               # calculate the properties of the aqueous species
                 try:
                     properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])
                     properties0 = engine.thermoPropertiesSubstance(Tref, Pref, comp.value.alias["RKT"])
 
                     enthalpy += phase.moles[comp] * (properties.enthalpy.val - properties0.enthalpy.val) / 1e3  # the units of enthalpy are J/mol
                     entropy += phase.moles[comp] * (properties.entropy.val - properties0.entropy.val) / 1e3  # the units of entropy are J/mol
-                    # if properties.volume.val > 0:
-                        # vol = properties.volume.val
                     volume += properties.volume.val * 1e-5 * phase.moles[comp]  # the units of volume are in J/bar
+                    # It seems the species volume contribution can be negative... I guess this due to charge effects of the ions??
+
                 except RuntimeError:
+                    # all species that cannot be calculated (mostly aqueous species, e.g. NaCl(aq))
+
                     # TODO - this is not particularly neat... I should compute their properties somehow... Usually (aq) species
                     comp_not_calculated.append(comp)
 
+        # calculate the total mass of the phase
         total_mass = sum([phase.mass[i] for i in phase.mass])
 
+        # update the phase properties
         props["P"] = P
         props["T"] = T
         props["h"] = enthalpy / (total_mass + 1e-6)

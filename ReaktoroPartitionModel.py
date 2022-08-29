@@ -6,7 +6,7 @@ from Fluid import Fluid
 import reaktoro as rkt
 from enum import Enum
 from typing import List, Union, Dict, Tuple, NoReturn, Optional
-
+import time
 
 def initFromElements(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.AqueousPhase, rkt.MineralPhase, str]:
     """
@@ -35,24 +35,37 @@ def initFromElements(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueo
         Nothing
 
     """
+
+    # create a string array of the elements (space separated)
     elements = ""
     for i in fluid.total.elements:
         elements += i + " "
     elements = elements[:-1]
 
+    # create a gaseous phase of all possible species from the given elements
     gaseous = rkt.GaseousPhase(rkt.speciate(elements))
+
+    # set the activity model if the phase has any species
     if gaseous.species():
         gaseous.setActivityModel(options.gaseousActivityModel.value())
 
+    # create an aqueous phase of all possible species from the given elements
     aqueous = rkt.AqueousPhase(rkt.speciate(elements))
+
+    # set the activity model if the phase has any species
     if aqueous.species():
         aqueous.setActivityModel(options.aqueousActivityModel.value())
+
+        # set a CO2 specific activity model
         if options.aqueousCO2ActivityModel.value is not None:
             if "C" in fluid.total.elements and "O" in fluid.total.elements:
                 aqueous.setActivityModel(rkt.chain(options.aqueousActivityModel.value(),
                                                    options.aqueousCO2ActivityModel.value("CO2")))
 
+    # create a mineral phase of all possible species from the given elements
     mineral = rkt.MineralPhases(rkt.speciate(elements))
+
+    # set the activity model if the phase has any species
     if mineral.species():
         mineral.setActivityModel(options.mineralActivityModel.value())
 
@@ -87,18 +100,24 @@ def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueou
             if the aqueous phase is not charge balanced
 
     """
+
+    # create a string array of the elements (space separated)
     elements = ""
     for i in fluid.total.elements:
         elements += i + " "
     elements = elements[:-1]
 
+    # initialise the aqueous, gaseous and mineral phases
     aqueous = rkt.AqueousPhase()
     gaseous = rkt.GaseousPhase()
     mineral = rkt.MineralPhases()
 
+
     charge = 0
     aqueous_str = ""
     if fluid.aqueous.components:
+
+        # check that the aqueous phase is charge balanced (all fluids should be charge balanced)
         for i in fluid.aqueous.components:
             aqueous_str += i.value.alias["RKT"] + " "
             charge += i.value.charge * fluid.total.moles[i]
@@ -106,11 +125,15 @@ def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueou
 
         charge *= 1/sum([fluid.aqueous.moles[i] for i in fluid.aqueous.moles])
 
+        # raise error if the specific charge difference exceeds a threshold
         if abs(charge) > 1e-3:
             raise Error("\n\nThe aqueous phase is not charge balanced. The excess charge is {:.4e}.\nPlease review the input data\n".format(charge))
 
+        # populate the aqueous phase with species and apply the selected activity model
         aqueous = rkt.AqueousPhase(aqueous_str)
         aqueous.setActivityModel(options.aqueousActivityModel.value())
+
+        # apply the CO2 activity model (if selected)
         if options.aqueousCO2ActivityModel.value is not None:
             if "CO2(aq)" in aqueous_str:
                 aqueous.setActivityModel(rkt.chain(options.aqueousActivityModel.value(),
@@ -121,6 +144,8 @@ def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueou
         for i in fluid.gaseous.components:
             gaseous_str += i.value.alias["RKT"] + " "
         gaseous_str = gaseous_str[:-1]
+
+        # populate the gaseous phase with species and apply the selected activity model
         gaseous = rkt.GaseousPhase(gaseous_str)
         gaseous.setActivityModel(options.gaseousActivityModel.value())
 
@@ -129,8 +154,13 @@ def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueou
         for i in fluid.mineral.components:
             mineral_str += i.value.alias["RKT"] + " "
         mineral_str = mineral_str[:-1]
+
+        # populate the mineral phase with species and apply the selected activity model
         mineral = rkt.MineralPhases(mineral_str)
-        mineral.setActivityModel(options.mineralActivityModel.value())
+        if options.mineralActivityModel == ReaktoroPartitionOptions.MineralActivityModels.IDEAL:
+            mineral.setActivityModel(options.mineralActivityModel.value(rkt.StateOfMatter.Solid))
+        else:
+            mineral.setActivityModel(options.mineralActivityModel.value())
 
     return gaseous, aqueous, mineral, elements
 
@@ -229,13 +259,14 @@ class ReaktoroPartitionOptions:
         """
             The MineralActivityModels class contains links to all the activity models that can be used for the mineral phase
         """
-        IDEAL = rkt.ActivityModelIdealSolution(rkt.StateOfMatter.Solid)
+        IDEAL = rkt.ActivityModelIdealSolution
         REDLICH_KISTER = rkt.ActivityModelRedlichKister
 
     def __init__(self):
         """
             initialises the ReaktoroPartitionOptions
         """
+
         self.database = self.Database.SUPCRTBL
         self.speciesMode = self.SpeciesMode.SELECTED
 
@@ -260,8 +291,6 @@ class ReaktoroPartition:
 
         TODO a P-H Equilibration would be cool too...
     """
-
-
 
     @staticmethod
     def calc(fluid: Fluid, P: float, T: float, options: ReaktoroPartitionOptions) -> Fluid:
@@ -289,17 +318,24 @@ class ReaktoroPartition:
                 if the equilibration is not successful (provided this check has not been disabled)
         """
 
+        # initialise the reaktoro database to be used
         db = rkt.SupcrtDatabase(options.database.value)
 
+        # generates the aqueous, gaseous and mineral phases
         aqueous, gaseous, mineral, elements = options.speciesMode(fluid, options)
 
+        # creates the chemical system
         system = rkt.ChemicalSystem(db, aqueous, gaseous, mineral)
 
+        # initialise a material class
         mix = rkt.Material(system)
+
+        # set the composition of each species
         for i in range(len(fluid.total.components)):
             comp = fluid.total.components[i]
             mix.add(comp.value.alias["RKT"], fluid.total.mass[comp], "kg")
 
+        # add a little bit of some commonly troublesome species (not very clean but it works)
         if options.speciesMode == ReaktoroPartitionOptions.SpeciesMode.ALL:
             # this is a total fudge....
             if "O" in elements:
@@ -307,18 +343,24 @@ class ReaktoroPartition:
             if "H" in elements:
                 mix.add("H2(aq)", 1e-15, "kg")
 
+        # equilibrate the fluid
         state = mix.equilibrate(T, "K", P, "Pa")
         res = mix.result()
 
+        # check if the equilibration converged
         if options.strictSucess:
             assert res.optima.succeeded
 
+        # print a debug file for the equilibration
         if options.debug:
             state.output(options.debugFileName)
 
+        # get the resultant components and component masses from all phases
         species = {}
         masses = {}
         for phase in state.system().phases().data():
+
+            # determine the phase type
             if phase.name() == "AqueousPhase":
                 key = PhaseType.AQUEOUS
             elif phase.name() == "GaseousPhase":
@@ -330,9 +372,11 @@ class ReaktoroPartition:
             else:
                 raise Error("\n\n Invalid phase encountered")
 
+            # get the Comp object and mass for each species in a phase
             species[key] = [LookUp().withReaktoroName(i.name()) for i in phase.species().data()]
             masses[key] = [state.speciesMass(i.name())[0] for i in phase.species().data()]
 
+        # populate the components and composition array for fluid creation
         components = []
         composition = []
         for i in species:
@@ -340,5 +384,5 @@ class ReaktoroPartition:
                 components.append(species[i][j])
                 composition.append(masses[i][j])
 
-        # now need to build a new fluid from this
+        # create a new fluid
         return Fluid(components=components, composition=composition)

@@ -3,7 +3,7 @@ from ReaktoroPartitionModel import ReaktoroPartition, ReaktoroPartitionOptions
 from Fluid import Fluid
 
 from enum import Enum
-from typing import List, Union, Dict, Tuple, NoReturn, Optional
+from typing import Union, Optional
 
 
 class PartitionModelOptions:
@@ -56,7 +56,7 @@ class Partition:
     calc(self, fluid, P, T)
     """
 
-    def __init__(self, options: Optional[PartitionModelOptions]=PartitionModelOptions()):
+    def __init__(self, options: Optional[PartitionModelOptions] = PartitionModelOptions()):
         """
         Initialises a Partition object from partitioning options (optional)
 
@@ -89,11 +89,13 @@ class Partition:
             the partitioned fluid
         """
 
+        # reset the phase properties flag
         fluid.total.props_calculated = False
         fluid.aqueous.props_calculated = False
         fluid.gaseous.props_calculated = False
         fluid.mineral.props_calculated = False
 
+        # set the correct options for the partition model
         if self.partitionModel == PartitionModelOptions.PartitionModels.REAKTORO:
             options = self.options.Reaktoro
         else:
