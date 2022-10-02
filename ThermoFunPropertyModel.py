@@ -153,6 +153,8 @@ class ThermoFunProperties:
 
             elif phase.massfrac[i] > options.massfracCutOff:
 
+                # TODO it seems that the mass cut off results in mis reporting of phases when they are actually not there...
+
                # calculate the properties of the aqueous species
                 try:
                     properties = engine.thermoPropertiesSubstance(T, P, comp.value.alias["RKT"])

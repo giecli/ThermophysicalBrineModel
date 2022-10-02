@@ -268,7 +268,7 @@ class ReaktoroPartitionOptions:
         """
 
         self.database = self.Database.SUPCRTBL
-        self.speciesMode = self.SpeciesMode.SELECTED
+        self.speciesMode = self.SpeciesMode.ALL
 
         self.aqueousActivityModel = self.AqueousActivityModels.IDEAL
         self.aqueousCO2ActivityModel = self.AqueousCO2ActivityModels.NONE
