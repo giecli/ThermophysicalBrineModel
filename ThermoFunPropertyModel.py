@@ -136,6 +136,8 @@ class ThermoFunProperties:
 
             if comp == Comp.WATER:
                 # calculate the properties of water using CoolProp
+                # TODO need to introduce a property extrapolation method to allow liquid properties to be calculated
+                # for all conditions
 
                 calc = cp.AbstractState("?", comp.value.alias["CP"])
 
