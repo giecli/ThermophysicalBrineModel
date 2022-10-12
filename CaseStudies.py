@@ -1,6 +1,9 @@
 import ThemophysicalPropertyModel as tppm
 import pickle
 import time
+import numpy as np
+import matplotlib.pyplot as plt
+from CoolProp.CoolProp import PropsSI
 
 # Maasland: MLD-GT-01-S1
 if __name__ == "__main_":
@@ -97,11 +100,7 @@ if __name__ == "__main_":
     print(reservoir.total.props.h - surface.total.props.h)
 
 # CoolProp Seawater comparison
-if __name__ == "__main__":
-
-    from CoolProp.CoolProp import PropsSI
-    import numpy as np
-    import matplotlib.pyplot as plt
+if __name__ == "__main_":
 
     sal = 0.1
     comp = [tppm.Comp.WATER, tppm.Comp.Halite]
@@ -236,10 +235,11 @@ if __name__ == "__main_":
     import numpy as np
     import matplotlib.pyplot as plt
 
-    sal = 0.1
+    sal = 0.05
     comp = [tppm.Comp.WATER, tppm.Comp.Li, tppm.Comp.Br]
+    alpha = (tppm.Comp.Br.value.Mr / tppm.Comp.Li.value.Mr)
 
-    mass = [1, sal]
+    mass = [1, sal/(1 + alpha), alpha * sal / (1 + alpha)]
     brine = tppm.Fluid(components=comp, composition=mass)
 
     partition = tppm.Partition()
@@ -254,42 +254,53 @@ if __name__ == "__main_":
     tppm_density = np.zeros(n)
     mitsw_density = np.zeros(n)
     iapws_density = np.zeros(n)
+    libr_density = np.zeros(n)
 
     tppm_enthalpy = np.zeros(n)
     mitsw_enthalpy = np.zeros(n)
     iapws_enthalpy = np.zeros(n)
+    libr_enthalpy = np.zeros(n)
 
     tppm_entropy = np.zeros(n)
     mitsw_entropy = np.zeros(n)
     iapws_entropy = np.zeros(n)
+    libr_entropy = np.zeros(n)
 
     for i, t in enumerate(ts):
         props = property.calc(brine, p, t)
 
         tppm_density[i] = props.total.props.rho
-        mitsw_density[i] = PropsSI("D", "T", t, "P", p, "INCOMP::MITSW[{}]".format(sal))
+        libr_density[i] = PropsSI("D", "T", t, "P", p, "INCOMP::LiBr[{}]".format(sal))
         iapws_density[i] = PropsSI("D", "T", t, "P", p, "Water")
 
         tppm_enthalpy[i] = props.total.props.h
-        mitsw_enthalpy[i] = PropsSI("H", "T", t, "P", p, "INCOMP::MITSW[{}]".format(sal))/1000
+        libr_enthalpy[i] = PropsSI("H", "T", t, "P", p, "INCOMP::LiBr[{}]".format(sal))/1000
         iapws_enthalpy[i] = PropsSI("H", "T", t, "P", p, "Water")/1000
 
         tppm_entropy[i] = props.total.props.s
-        mitsw_entropy[i] = PropsSI("S", "T", t, "P", p, "INCOMP::MITSW[{}]".format(sal))/1000
+        libr_entropy[i] = PropsSI("S", "T", t, "P", p, "INCOMP::LiBr[{}]".format(sal))/1000
         iapws_entropy[i] = PropsSI("S", "T", t, "P", p, "Water")/1000
+
+        if sal < 0.12:
+            mitsw_density[i] = PropsSI("D", "T", t, "P", p, "INCOMP::MITSW[{}]".format(sal))
+            mitsw_enthalpy[i] = PropsSI("H", "T", t, "P", p, "INCOMP::MITSW[{}]".format(sal)) / 1000
+            mitsw_entropy[i] = PropsSI("S", "T", t, "P", p, "INCOMP::MITSW[{}]".format(sal)) / 1000
 
     ts = ts - 273.15
 
-    diff_density = np.abs((tppm_density - mitsw_density)/(mitsw_density + 1e-6) * 100)
+    diff_density = (tppm_density - libr_density)/(libr_density + 1e-6) * 100
     print(diff_density)
 
     fig, ax1 = plt.subplots()
-    ax1.set_title("Brine Density for {:} kg/kg NaCl".format(sal))
+    ax1.set_title("Brine Density for {:} kg/kg LiBr".format(sal))
     ax2 = ax1.twinx()
 
     ax1.plot(ts, tppm_density, label="TPPM")
-    ax1.plot(ts, mitsw_density, label="MITSW")
+    ax1.plot(ts, libr_density, label="LiBr")
     ax1.plot(ts, iapws_density, label="IAPWS")
+
+    if sal < 0.12:
+        ax1.plot(ts, mitsw_density, label="MITSW")
 
     ax2.plot(ts, diff_density, "r-", label="%diff")
 
@@ -298,28 +309,32 @@ if __name__ == "__main_":
     ax2.set_ylabel("Percentage Difference, %")
 
     ax1.legend()
-    ax2.legend(loc=3)
+    ax2.legend(loc=4)
 
     plt.tight_layout()
     plt.show()
 
     tppm_enthalpy = tppm_enthalpy - tppm_enthalpy[0]
     mitsw_enthalpy = mitsw_enthalpy - mitsw_enthalpy[0]
+    libr_enthalpy = libr_enthalpy - libr_enthalpy[0]
     iapws_enthalpy = iapws_enthalpy - iapws_enthalpy[0]
-    diff_enthalpy = (tppm_enthalpy - mitsw_enthalpy) / (mitsw_enthalpy + 1e-6) *100
+    diff_enthalpy = (tppm_enthalpy - libr_enthalpy) / (libr_enthalpy + 1e-6) *100
     print("___ENTHALPY___")
     print(tppm_enthalpy)
     print(mitsw_enthalpy)
+    print(libr_enthalpy)
     print(iapws_enthalpy)
     print(diff_enthalpy)
 
     fig, ax1 = plt.subplots()
-    ax1.set_title("Brine Enthalpy for {:} kg/kg NaCl".format(sal))
+    ax1.set_title("Brine Enthalpy for {:} kg/kg LiBr".format(sal))
     ax2 = ax1.twinx()
 
     ax1.plot(ts, tppm_enthalpy, label="TPPM")
-    ax1.plot(ts, mitsw_enthalpy, label="MITSW")
+    ax1.plot(ts, libr_enthalpy, label="LiBr")
     ax1.plot(ts, iapws_enthalpy, label="IAPWS")
+    if sal < 0.12:
+        ax1.plot(ts, mitsw_enthalpy, label="MITSW")
 
     ax2.plot(ts[1:], diff_enthalpy[1:], "r-", label="%diff")
 
@@ -334,22 +349,26 @@ if __name__ == "__main_":
     plt.show()
 
     tppm_entropy = tppm_entropy - tppm_entropy[0]
+    libr_entropy = libr_entropy - libr_entropy[0]
     mitsw_entropy = mitsw_entropy - mitsw_entropy[0]
     iapws_entropy = iapws_entropy - iapws_entropy[0]
-    diff_entropy = (tppm_entropy - mitsw_entropy) / (mitsw_entropy + 1e-6) *100
+    diff_entropy = (tppm_entropy - libr_entropy) / (libr_entropy + 1e-6) *100
     print("___ENTROPY___")
     print(tppm_entropy)
+    print(libr_entropy)
     print(mitsw_entropy)
     print(iapws_entropy)
     print(diff_entropy)
 
     fig, ax1 = plt.subplots()
-    ax1.set_title("Brine Entropy for {:} kg/kg NaCl".format(sal))
+    ax1.set_title("Brine Entropy for {:} kg/kg LiBr".format(sal))
     ax2 = ax1.twinx()
 
     ax1.plot(ts, tppm_entropy, label="TPPM")
-    ax1.plot(ts, mitsw_entropy, label="MITSW")
+    ax1.plot(ts, libr_entropy, label="LiBr")
     ax1.plot(ts, iapws_entropy, label="IAPWS")
+    if sal < 0.12:
+        ax1.plot(ts, mitsw_entropy, label="MITSW")
 
     ax2.plot(ts[1:], diff_entropy[1:], "r-", label="%diff")
 
@@ -432,327 +451,271 @@ if __name__ == "__main_":
     #                    749]
 """ ______ """
 
-# Russian Samples - Sample No. 68
+# analysis of the Russian Fluid samples
+if __name__ == "__main_":
+
+    for i in ["Sample No68"]:
+        liq_components = [tppm.Comp.WATER,
+                          tppm.Comp.B,
+                          tppm.Comp.Ca,
+                          tppm.Comp.K,
+                          tppm.Comp.Li,
+                          tppm.Comp.Mg,
+                          tppm.Comp.Na,
+                          tppm.Comp.S,
+                          tppm.Comp.Se,
+                          tppm.Comp.Si,
+                          tppm.Comp.Sr,
+                          tppm.Comp.Cl,
+                          tppm.Comp.SO4_minus2]
+        liq_composition = [1e6,
+                           1.2,
+                           49.2,
+                           10.2,
+                           0.2,
+                           32.9,
+                           396,
+                           240,
+                           2.4,
+                           13.8,
+                           1.1,
+                           152,
+                           749]
+        liq_composition = [i * 1e-6 for i in liq_composition]
+
+        # creating the liquid fluid container
+        fluid_No68 = tppm.Fluid(components=liq_components, composition=liq_composition)
+
+        partition = tppm.Partition()
+
+        fluid_No68 = partition.calc(fluid_No68, 101325, 273.15)
+        fluid_No68.cullComponents()
+
+    for i in ["Sample No129"]:
+        liq_components = [tppm.Comp.WATER,
+                          tppm.Comp.B,
+                          tppm.Comp.Ca,
+                          tppm.Comp.K,
+                          tppm.Comp.Li,
+                          tppm.Comp.Mg,
+                          tppm.Comp.Na,
+                          tppm.Comp.P,
+                          tppm.Comp.S,
+                          tppm.Comp.Se,
+                          tppm.Comp.Si,
+                          tppm.Comp.Sr,
+                          tppm.Comp.Cl,
+                          tppm.Comp.SO4_minus2]
+        liq_composition = [1e6,
+                           2.4,
+                           2.8,
+                           4.7,
+                           0.1,
+                           1.3,
+                           590,
+                           0.2,
+                           211,
+                           0.2,
+                           12.3,
+                           0.1,
+                           176,
+                           616]
+
+        liq_composition = [i * 1e-6 for i in liq_composition]
+
+        # creating the liquid fluid container
+        fluid_No129 = tppm.Fluid(components=liq_components, composition=liq_composition)
+
+        partition = tppm.Partition()
+
+        fluid_No129 = partition.calc(fluid_No129, 101325, 298)
+        fluid_No129.cullComponents()
+
+    for i in ["Sample No27T"]:
+        liq_components = [tppm.Comp.WATER,
+                          tppm.Comp.B,
+                          tppm.Comp.Ba,
+                          tppm.Comp.Ca,
+                          tppm.Comp.K,
+                          tppm.Comp.Li,
+                          tppm.Comp.Mg,
+                          tppm.Comp.Na,
+                          tppm.Comp.S,
+                          tppm.Comp.Si,
+                          tppm.Comp.Sr,
+                          tppm.Comp.Cl,
+                          tppm.Comp.SO4_minus2,
+                          tppm.Comp.H_plus,
+                          tppm.Comp.O2_aq]
+        liq_composition = [1e6,
+                           59.3,
+                           1.7,
+                           73.6,
+                           145,
+                           2.2,
+                           28.5,
+                           7540,
+                           39.8,
+                           29.4,
+                           6.7,
+                           7387,
+                           30.7,
+                           1,
+                           1]
+
+        liq_composition = [i * 1e-6 for i in liq_composition]
+
+        # creating the liquid fluid container
+        fluid_No27T = tppm.Fluid(components=liq_components, composition=liq_composition)
+
+        partition = tppm.Partition()
+        # partition.options.Reaktoro.strictSucess = False
+
+        fluid_No27T = partition.calc(fluid_No27T, 101325, 300)
+        fluid_No27T.cullComponents()
+        fluid_No27T.cullPhase(tppm.PhaseType.GASEOUS)
+
+    for i in ["Sample No38T"]:
+        # reduced comp
+        liq_components = [tppm.Comp.WATER,
+                          tppm.Comp.B,
+                          tppm.Comp.Ca,
+                          tppm.Comp.K,
+                          tppm.Comp.Li,
+                          tppm.Comp.Mg,
+                          tppm.Comp.Na,
+                          tppm.Comp.S,
+                          tppm.Comp.Si,
+                          tppm.Comp.Sr,
+                          tppm.Comp.Cl,
+                          tppm.Comp.NO3_minus,
+                          tppm.Comp.SO4_minus2,
+                          tppm.Comp.H_plus,
+                          tppm.Comp.O2_aq]
+        liq_composition = [1e6,
+                           59.8,
+                           72.6,
+                           138,
+                           2.1,
+                           29.6,
+                           7660,
+                           34.2,
+                           28.1,
+                           6.8,
+                           7689,
+                           59.3,
+                           24.6,
+                           1,
+                           1]
+
+        liq_composition = [i * 1e-6 for i in liq_composition]
+
+        # creating the liquid fluid container
+        fluid_No38T = tppm.Fluid(components=liq_components, composition=liq_composition)
+
+        partition = tppm.Partition()
+        # partition.options.Reaktoro.strictSucess = False
+
+        fluid_No38T = partition.calc(fluid_No38T, 101325, 298)
+        fluid_No38T.cullComponents()
+        fluid_No38T.cullPhase(tppm.PhaseType.GASEOUS)
+
+    p = 101325
+
+    rho_ts = np.array([277.15, 283.15, 293.15, 303.15, 313.15, 323.15, 333.15])
+    rho_No68 = [1000.78, 1000.55, 999.01, 996.4, 992.92, 988.70, 983.69]
+    rho_No129 = [1002.04, 1001.69, 1000.17, 997.55, 994.05, 989.60, 984.6]
+    rho_No27T = [1016.4, 1015.87, 1013.73, 1010.78, 1007.03, 1002.81, np.NaN]
+    rho_No38T = [1017.08, 1016.05, 1014.38, 1011.43, 1007.73, 1003.45, 998.65]
+
+    h_ts = np.array([273.2, 278.15, 283.15, 293.15, 303.15, 313.15, 323.15, 333.15])
+    h_No68 = [0.0, 21.251, 42.361, 84.257, 125.87, 167.4, 209.02, 250.91]
+    h_No129 = [0.0, 21.430, 42.927, 85.492, 127.82, 170.03, 212.25, 254.60]
+    h_No27T = [0.0, 21.364, 42.697, 84.928, 126.96, 168.83, 210.47, 252.711]
+    h_No38T = [0.0, 21.671, 43.322, 86.231, 128.82, 171.20, 192.33, 213.44]
+
+    n = 13
+    ts = np.linspace(273.2, 333.15, n)
+
+    tppm_rho_No68 = np.zeros(n)
+    tppm_rho_No129 = np.zeros(n)
+    tppm_rho_No27T = np.zeros(n)
+    tppm_rho_No38T = np.zeros(n)
+
+    tppm_h_No68 = np.zeros(n)
+    tppm_h_No129 = np.zeros(n)
+    tppm_h_No27T = np.zeros(n)
+    tppm_h_No38T = np.zeros(n)
+
+    property = tppm.PropertyModel()
+
+    for i, t in enumerate(ts):
+        props_No68 = property.calc(fluid_No68, p, t).total.props
+        props_No129 = property.calc(fluid_No129, p, t).total.props
+        props_No27T = property.calc(fluid_No27T, p, t).total.props
+        props_No38T = property.calc(fluid_No38T, p, t).total.props
+
+        tppm_rho_No68[i] = props_No68.rho
+        tppm_rho_No129[i] = props_No129.rho
+        tppm_rho_No27T[i] = props_No27T.rho
+        tppm_rho_No38T[i] = props_No38T.rho
+
+        tppm_h_No68[i] = props_No68.h
+        tppm_h_No129[i] = props_No129.h
+        tppm_h_No27T[i] = props_No27T.h
+        tppm_h_No38T[i] = props_No38T.h
+
+    fig, ax1 = plt.subplots()
+    ax1.plot(ts - 273.15, tppm_rho_No68, "b-", label="Sample No.68")
+    ax1.plot(rho_ts - 273.15, rho_No68, "bo")
+    ax1.plot(ts - 273.15, tppm_rho_No129, "g-", label="Sample No.129")
+    ax1.plot(rho_ts - 273.15, rho_No129, "go")
+    ax1.plot(ts - 273.15, tppm_rho_No27T, "r-", label="Sample No.27T")
+    ax1.plot(rho_ts - 273.15, rho_No27T, "ro")
+    ax1.plot(ts - 273.15, tppm_rho_No38T, "k-", label="Sample No.38T")
+    ax1.plot(rho_ts - 273.15, rho_No38T, "ko")
+    ax1.set_xlabel("Temperature, degC")
+    ax1.set_ylabel("Density, kg/m3")
+    ax1.legend()
+    plt.show()
+
+    tppm_h_No68 = tppm_h_No68 - tppm_h_No68[0]
+    tppm_h_No129 = tppm_h_No129 - tppm_h_No129[0]
+    tppm_h_No27T = tppm_h_No27T - tppm_h_No27T[0]
+    tppm_h_No38T = tppm_h_No38T - tppm_h_No38T[0]
+
+    fig, ax1 = plt.subplots()
+    ax1.plot(ts - 273.15, tppm_h_No68, "b-", label="Sample No.68")
+    ax1.plot(h_ts - 273.15, h_No68, "bo")
+    ax1.plot(ts - 273.15, tppm_h_No129, "g-", label="Sample No.129")
+    ax1.plot(h_ts - 273.15, h_No129, "go")
+    ax1.plot(ts - 273.15, tppm_h_No27T, "r-", label="Sample No.27T")
+    ax1.plot(h_ts - 273.15, h_No27T, "ro")
+    ax1.plot(ts - 273.15, tppm_h_No38T, "k-", label="Sample No.38T")
+    ax1.plot(h_ts - 273.15, h_No38T, "ko")
+    ax1.set_xlabel("Temperature, degC")
+    ax1.set_ylabel("Enthalpy Change, kJ/kg")
+    ax1.legend()
+    plt.show()
+
 if __name__ == "__main__":
-    # liq_components = [tppm.Comp.WATER,
-    #                   tppm.Comp.Al,
-    #                   tppm.Comp.As,
-    #                   tppm.Comp.B,
-    #                   tppm.Comp.Ba,
-    #                   tppm.Comp.Ca,
-    #                   tppm.Comp.Cd,
-    #                   tppm.Comp.Co,
-    #                   tppm.Comp.Cr,
-    #                   tppm.Comp.Cu,
-    #                   tppm.Comp.Fe,
-    #                   tppm.Comp.Hg,
-    #                   tppm.Comp.K,
-    #                   tppm.Comp.Li,
-    #                   tppm.Comp.Mg,
-    #                   tppm.Comp.Mn,
-    #                   tppm.Comp.Mo,
-    #                   tppm.Comp.Na,
-    #                   tppm.Comp.Ni,
-    #                   tppm.Comp.P,
-    #                   tppm.Comp.Pb,
-    #                   tppm.Comp.S,
-    #                   tppm.Comp.Sb,
-    #                   tppm.Comp.Se,
-    #                   tppm.Comp.Si,
-    #                   tppm.Comp.Sr,
-    #                   tppm.Comp.Ti,
-    #                   tppm.Comp.Tl,
-    #                   tppm.Comp.V,
-    #                   tppm.Comp.Zn,
-    #                   tppm.Comp.Cl,
-    #                   tppm.Comp.NO3_minus,
-    #                   tppm.Comp.SO4_minus2,]
-    # liq_composition = [1e6,
-    #                    0.1,
-    #                    0.1,
-    #                    1.2,
-    #                    0.1,
-    #                    49.2,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    10.2,
-    #                    0.2,
-    #                    32.9,
-    #                    0.1,
-    #                    0.1,
-    #                    396,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    240,
-    #                    0.1,
-    #                    2.4,
-    #                    13.8,
-    #                    1.1,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    0.1,
-    #                    152,
-    #                    0.1,
-    #                    749]
 
-    liq_components = [tppm.Comp.WATER,
-                      tppm.Comp.B,
-                      tppm.Comp.Ca,
-                      tppm.Comp.K,
-                      tppm.Comp.Li,
-                      tppm.Comp.Mg,
-                      tppm.Comp.Na,
-                      tppm.Comp.S,
-                      tppm.Comp.Se,
-                      tppm.Comp.Si,
-                      tppm.Comp.Sr,
-                      tppm.Comp.Cl,
-                      tppm.Comp.SO4_minus2]
-    liq_composition = [1e6,
-                       1.2,
-                       49.2,
-                       10.2,
-                       0.2,
-                       32.9,
-                       396,
-                       240,
-                       2.4,
-                       13.8,
-                       1.1,
-                       152,
-                       749]
-    liq_composition = [i * 1e-6 for i in liq_composition]
+    comp = [tppm.Comp.WATER,
+            tppm.Comp.STEAM,
+            tppm.Comp.Na_plus,
+            tppm.Comp.Cl_minus,
+            tppm.Comp.NaCl_aq,
+            tppm.Comp.Halite]
+    masses = [1, 0, 0, 0, 0, 0.1]
+    brine = tppm.Fluid(components=comp,composition=masses)
 
-    # creating the liquid fluid container
-    liquid = tppm.Fluid(components=liq_components, composition=liq_composition)
+    T = 298
+    P = 101325
 
     partition = tppm.Partition()
+    brine = partition.calc(brine, P, T)
 
-    liquid = partition.calc(liquid, 101325, 273.15)
-    liquid.cullComponents()
+    property = tppm.PropertyModel()
+    brine = property.calc(brine, P, T)
 
-    print(liquid)
-
-    # now calculate various properties I guess
-
-# Russian Samples - Sample No. 129
-if __name__ == "__main__":
-    liq_components = [tppm.Comp.WATER,
-                      tppm.Comp.B,
-                      tppm.Comp.Ca,
-                      tppm.Comp.K,
-                      tppm.Comp.Li,
-                      tppm.Comp.Mg,
-                      tppm.Comp.Na,
-                      tppm.Comp.P,
-                      tppm.Comp.S,
-                      tppm.Comp.Se,
-                      tppm.Comp.Si,
-                      tppm.Comp.Sr,
-                      tppm.Comp.Cl,
-                      tppm.Comp.SO4_minus2]
-    liq_composition = [1e6,
-                       2.4,
-                       2.8,
-                       4.7,
-                       0.1,
-                       1.3,
-                       590,
-                       0.2,
-                       211,
-                       0.2,
-                       12.3,
-                       0.1,
-                       176,
-                       616]
-
-    liq_composition = [i * 1e-6 for i in liq_composition]
-
-    # creating the liquid fluid container
-    liquid = tppm.Fluid(components=liq_components, composition=liq_composition)
-
-    partition = tppm.Partition()
-
-    liquid = partition.calc(liquid, 101325, 298)
-    liquid.cullComponents()
-
-    print(liquid)
-
-    # now calculate various properties I guess
-
-# Russian Samples - Sample No. 27T
-if __name__ == "__main__":
-    liq_components = [tppm.Comp.WATER,
-                      tppm.Comp.B,
-                      tppm.Comp.Ba,
-                      tppm.Comp.Ca,
-                      tppm.Comp.K,
-                      tppm.Comp.Li,
-                      tppm.Comp.Mg,
-                      tppm.Comp.Na,
-                      tppm.Comp.S,
-                      tppm.Comp.Si,
-                      tppm.Comp.Sr,
-                      tppm.Comp.Cl,
-                      tppm.Comp.SO4_minus2,
-                      tppm.Comp.H_plus,
-                      tppm.Comp.O2_aq]
-    liq_composition = [1e6,
-                       59.3,
-                       1.7,
-                       73.6,
-                       145,
-                       2.2,
-                       28.5,
-                       7540,
-                       39.8,
-                       29.4,
-                       6.7,
-                       7387,
-                       30.7,
-                       1,
-                       1]
-
-    liq_composition = [i * 1e-6 for i in liq_composition]
-
-    # creating the liquid fluid container
-    liquid = tppm.Fluid(components=liq_components, composition=liq_composition)
-
-    partition = tppm.Partition()
-    # partition.options.Reaktoro.strictSucess = False
-
-    liquid = partition.calc(liquid, 101325, 300)
-    liquid.cullComponents()
-    liquid.cullPhase(tppm.PhaseType.GASEOUS)
-
-    print(liquid)
-
-    # now calculate various properties I guess
-
-# Russian Samples - Sample No. 38T
-if __name__ == "__main__":
-    # full comp
-    # liq_components = [tppm.Comp.WATER,
-    #                   tppm.Comp.Al,
-    #                   tppm.Comp.As,
-    #                   tppm.Comp.B,
-    #                   tppm.Comp.Ba,
-    #                   tppm.Comp.Ca,
-    #                   tppm.Comp.Cd,
-    #                   tppm.Comp.Co,
-    #                   tppm.Comp.Cr,
-    #                   tppm.Comp.Cu,
-    #                   tppm.Comp.Fe,
-    #                   tppm.Comp.Hg,
-    #                   tppm.Comp.K,
-    #                   tppm.Comp.Li,
-    #                   tppm.Comp.Mg,
-    #                   tppm.Comp.Mn,
-    #                   tppm.Comp.Mo,
-    #                   tppm.Comp.Na,
-    #                   tppm.Comp.Ni,
-    #                   tppm.Comp.P,
-    #                   tppm.Comp.Pb,
-    #                   tppm.Comp.S,
-    #                   tppm.Comp.Sb,
-    #                   tppm.Comp.Se,
-    #                   tppm.Comp.Si,
-    #                   tppm.Comp.Sr,
-    #                   tppm.Comp.Ti,
-    #                   tppm.Comp.Tl,
-    #                   tppm.Comp.V,
-    #                   tppm.Comp.Zn,
-    #                   tppm.Comp.Cl,
-    #                   tppm.Comp.NO3_minus,
-    #                   tppm.Comp.SO4_minus2,
-    #                   tppm.Comp.H_plus,
-    #                   tppm.Comp.O2_aq]
-    # liq_composition = [1e6,
-    #                    0.01,
-    #                    0.01,
-    #                    59.8,
-    #                    2.0,
-    #                    72.6,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    138,
-    #                    2.1,
-    #                    29.6,
-    #                    0.01,
-    #                    0.01,
-    #                    7660,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    34.2,
-    #                    0.01,
-    #                    0.01,
-    #                    28.1,
-    #                    6.8,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    0.01,
-    #                    7689,
-    #                    59.3,
-    #                    24.6,
-    #                    1,
-    #                    1]
-
-    # reduced comp
-    liq_components = [tppm.Comp.WATER,
-                      tppm.Comp.B,
-                      tppm.Comp.Ca,
-                      tppm.Comp.K,
-                      tppm.Comp.Li,
-                      tppm.Comp.Mg,
-                      tppm.Comp.Na,
-                      tppm.Comp.S,
-                      tppm.Comp.Si,
-                      tppm.Comp.Sr,
-                      tppm.Comp.Cl,
-                      tppm.Comp.NO3_minus,
-                      tppm.Comp.SO4_minus2,
-                      tppm.Comp.H_plus,
-                      tppm.Comp.O2_aq]
-    liq_composition = [1e6,
-                       59.8,
-                       72.6,
-                       138,
-                       2.1,
-                       29.6,
-                       7660,
-                       34.2,
-                       28.1,
-                       6.8,
-                       7689,
-                       59.3,
-                       24.6,
-                       1,
-                       1]
-
-    liq_composition = [i * 1e-6 for i in liq_composition]
-
-    # creating the liquid fluid container
-    liquid = tppm.Fluid(components=liq_components, composition=liq_composition)
-
-    partition = tppm.Partition()
-    # partition.options.Reaktoro.strictSucess = False
-
-    liquid = partition.calc(liquid, 101325, 298)
-    liquid.cullComponents()
-    liquid.cullPhase(tppm.PhaseType.GASEOUS)
-
-    print(liquid)
-
-    # now calculate various properties I guess
+    print(brine)

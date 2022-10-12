@@ -181,8 +181,12 @@ class ThermoFunProperties:
         props["T"] = T
         props["h"] = enthalpy / (total_mass + 1e-6)
         props["s"] = entropy / (total_mass + 1e-6)
-        props["rho"] = total_mass / (volume + 1e-6)
         props["v"] = volume / total_mass
+
+        if volume == 0:
+            props["rho"] = 0
+        else:
+            props["rho"] = 1 / props["v"]
         props["m"] = total_mass
         props["NotCalculated"] = comp_not_calculated
 
