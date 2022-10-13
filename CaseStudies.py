@@ -705,14 +705,21 @@ if __name__ == "__main__":
             tppm.Comp.Na_plus,
             tppm.Comp.Cl_minus,
             tppm.Comp.NaCl_aq,
-            tppm.Comp.Halite]
-    masses = [1, 0, 0, 0, 0, 0.1]
-    brine = tppm.Fluid(components=comp,composition=masses)
+            tppm.Comp.Halite,
+            tppm.Comp.CARBONDIOXIDE,
+            tppm.Comp.CO2_aq]
+    masses = [1, 1e-15, 0, 0, 0, 0.1, 0.002, 0]
+    tot_mass = sum(masses)
+    masses = [i /tot_mass for i in masses]
 
-    T = 298
+    brine = tppm.Fluid(components=comp, composition=masses)
+
+    T = 375
     P = 101325
 
     partition = tppm.Partition()
+    partition.options.Reaktoro.speciesMode = tppm.PartitionModelOptions().Reaktoro.SpeciesMode.SELECTED
+    # partition.options.Reaktoro.strictSucess = False
     brine = partition.calc(brine, P, T)
 
     property = tppm.PropertyModel()
