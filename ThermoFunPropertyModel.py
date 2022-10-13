@@ -146,12 +146,32 @@ class ThermoFunProperties:
                 h0 = calc.hmass()
                 s0 = calc.smass()
 
-                # calculate the properties at the temperature and pressure of interest
-                calc.update(cp.PT_INPUTS, P, T)
+                calc.update(cp.PQ_INPUTS, P, 0)
+                Tsat = calc.T()
+                if T < Tsat:
+                    # calculate the properties at the temperature and pressure of interest
+                    calc.update(cp.PT_INPUTS, P, T)
+                    h = calc.hmass()
+                    s = calc.smass()
+                    rho = calc.rhomass()
+                else:
+                    hsat = calc.hmass()
+                    ssat = calc.smass()
+                    rhosat = calc.rhomass()
 
-                enthalpy += phase.mass[comp] * (calc.hmass() - h0) / 1e3
-                entropy += phase.mass[comp] * (calc.smass() - s0) / 1e3
-                volume += phase.mass[comp] / calc.rhomass()
+                    calc.update(cp.PT_INPUTS, P, Tsat - 1)
+                    dh = hsat - calc.hmass()
+                    ds = ssat - calc.smass()
+                    drho = rhosat - calc.rhomass()
+                    dT = T - Tsat
+
+                    h = hsat + dh * dT
+                    s = ssat + ds * dT
+                    rho = rhosat + drho * dT
+
+                enthalpy += phase.mass[comp] * (h - h0) / 1e3
+                entropy += phase.mass[comp] * (s - s0) / 1e3
+                volume += phase.mass[comp] / rho
 
             elif phase.massfrac[i] > options.massfracCutOff:
 
