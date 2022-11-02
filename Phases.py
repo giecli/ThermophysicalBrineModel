@@ -147,7 +147,7 @@ class Phase:
         self.molefrac = []
         self.up_to_date = True
 
-        self.props = PhaseProperties({"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "m": 0})
+        self.props = PhaseProperties({"P": 0.0, "T": 0.0, "h": 0.0, "s": 0.0, "rho": 0.0, "m": 0.0})
         self.props_calculated = False
 
     def __str__(self):

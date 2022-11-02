@@ -1,4 +1,4 @@
-import ThemophysicalPropertyModel as tppm
+import ThermophysicalPropertyModel as tppm
 import pickle
 import time
 import numpy as np
@@ -698,6 +698,7 @@ if __name__ == "__main_":
     ax1.legend()
     plt.show()
 
+# real brine
 if __name__ == "__main__":
 
     comp = [tppm.Comp.WATER,
@@ -712,17 +713,212 @@ if __name__ == "__main__":
     tot_mass = sum(masses)
     masses = [i /tot_mass for i in masses]
 
-    brine = tppm.Fluid(components=comp, composition=masses)
+    geofluid = tppm.Fluid(components=comp, composition=masses)
 
-    T = 375
-    P = 101325
+    # Tin = 273.15 + 163.5
+    Tin = 273.15 + 162
+    Tout = 273.15 + 100
+    P = 6 * 1e5
 
     partition = tppm.Partition()
     partition.options.Reaktoro.speciesMode = tppm.PartitionModelOptions().Reaktoro.SpeciesMode.SELECTED
-    # partition.options.Reaktoro.strictSucess = False
-    brine = partition.calc(brine, P, T)
+    geofluid = partition.calc(geofluid, P, Tin)
+
+    NCG = geofluid.promotePhaseToFluid(tppm.PhaseType.GASEOUS)
+    brine = geofluid.promotePhaseToFluid(tppm.PhaseType.AQUEOUS)
 
     property = tppm.PropertyModel()
-    brine = property.calc(brine, P, T)
+    brine = property.calc(brine, P, Tin)
+    NCG = property.calc(NCG, P, Tin)
+
+    print(NCG)
+    print(brine)
+
+    # brine first
+    n_b = 10
+    ts_b = np.linspace(Tin, Tout, n_b)
+    hs_b = np.zeros(n_b)
+    ss_b = np.zeros(n_b)
+    partition.options.Reaktoro.strictSucess = False
+    for i, T in enumerate(ts_b):
+        brine = partition.calc(brine, P, T)
+        brine = property.calc(brine, P, T)
+        hs_b[i] = brine.total.props.h
+        ss_b[i] = brine.total.props.s
+    hs_b = hs_b - hs_b[-1]
+    ss_b = ss_b - ss_b[-1]
+
+    n_n = 20
+    ts_n = np.linspace(Tin, Tout, n_n)
+    hs_n = np.zeros(n_n)
+    ss_n = np.zeros(n_n)
+    for i, T in enumerate(ts_n):
+        NCG = property.calc(NCG, P, T)
+        hs_n[i] = NCG.total.props.h
+        ss_n[i] = NCG.total.props.s
+    hs_n = hs_n - hs_n[-1]
+    ss_n = ss_n - ss_n[-1]
+
+    hs_n = hs_n[1:]
+    ss_n = ss_n[1:]
+    ts_n = ts_n[1:]
+
+    plt.plot(hs_b * brine.total.props.m, ts_b - 273.15, label="Brine")
+    plt.plot(hs_n * NCG.total.props.m + hs_b[0] * brine.total.props.m, ts_n - 273.15, label="NCG")
+    plt.xlabel("Heat Transferred, kW")
+    plt.ylabel("Temperature, degC")
+    plt.legend()
+    plt.ylim((300 - 273.15, Tin + 20 - 273.15))
+    plt.show()
+
+    print(hs_b, hs_n)
+    print(ss_b, ss_n)
+    print(ts_b , ts_n)
+    print(brine.total.props.m, NCG.total.props.m)
+
+    dh = hs_b[0] * brine.total.props.m + hs_n[0] * NCG.total.props.m
+    ds = ss_b[0] * brine.total.props.m + ss_n[0] * NCG.total.props.m
+    de = dh - 298 * ds
+
+    print(dh, ds, de)
+
+
+# heat and exergy comparison for water and brine
+if __name__ == "__main_":
+
+    water = tppm.Fluid(components=[tppm.Comp.WATER], composition=[1])
+
+    properties = tppm.PropertyModel()
+
+    Tref = 298
+    P = 10 * 1e5
+    Tin = 273.15 + 160
+    Tout = 273.15 + 100
+
+    eta_cycle = (1 - (2 * Tref/(Tin + Tout)))
+    eta = 0.8 *eta_cycle
+
+    inlet = properties.calc(water, P, Tin).copy()
+    outlet = properties.calc(water, P, Tout)
+
+    delta_h = inlet.aqueous.props.h - outlet.aqueous.props.h
+    delta_s = inlet.aqueous.props.s - outlet.aqueous.props.s
+
+    Q_water = 1 * delta_h
+    Wnet = eta * Q_water
+    delta_Exergy = 1 * (delta_h - Tref * delta_s)
+    eta_II = Wnet / delta_Exergy
+
+    print("WATER")
+    print("Qwater", Q_water)
+    print("ds", delta_s)
+    print("Wnet", Wnet)
+    print("deltaExergy", delta_Exergy)
+    print("eta_II", eta_II)
+    print("\n")
+
+    components = [tppm.Comp.WATER, tppm.Comp.Halite]
+    mass = [1, 0.1]
+    composition = [i/sum(mass) for i in mass]
+    brine = tppm.Fluid(components=components, composition=composition)
+    partition = tppm.Partition()
+
+    brine_in = partition.calc(brine, P, Tin)
+    brine_out = partition.calc(brine, P, Tout)
+
+    brine_in = properties.calc(brine_in, P, Tin)
+    brine_out = properties.calc(brine_out, P, Tout)
+
+    delta_h = brine_in.aqueous.props.h - brine_out.aqueous.props.h
+    delta_s = brine_in.aqueous.props.s - brine_out.aqueous.props.s
+
+    Q_brine = 1 * delta_h
+    Wnet = eta * Q_brine
+    delta_Exergy = 1 * (delta_h - Tref * delta_s)
+    eta_II = Wnet / delta_Exergy
+
+    print("BRINE")
+    print("Qbrine", Q_brine)
+    print("ds", delta_s)
+    print("Wnet", Wnet)
+    print("deltaExergy", delta_Exergy)
+    print("eta_II", eta_II)
+
+# sample code snippet
+if __name__ == "__main_":
+    import ThermophysicalPropertyModel as tppm
+    from ThermophysicalPropertyModel import Comp, Fluid, Partition, PropertyModel
+
+    components = [Comp.WATER, Comp.NaCl_aq, Comp.CARBONDIOXIDE]
+    composition = [1, 0.1, 0.02]
+
+    brine = Fluid(components=components, composition=composition)
+
+    P = 101325  # in Pa
+    T = 350  # in K
+
+    brine = Partition().calc(brine, P, T)
+    brine = PropertyModel().calc(brine, P, T)
 
     print(brine)
+
+# simple salt water
+if __name__ == "__main_":
+    Tref = 298
+    P = 10 * 1e5
+    Tin = 273.15 + 160
+    Tout = 273.15 + 100
+
+    water = tppm.Fluid(components=[tppm.Comp.WATER], composition=[1])
+
+    components = [tppm.Comp.WATER, tppm.Comp.Halite]
+    mass = [1, 0.1]
+    composition = [i/sum(mass) for i in mass]
+    brine = tppm.Fluid(components=components, composition=composition)
+
+    partition = tppm.Partition()
+    properties = tppm.PropertyModel()
+
+    t_s = np.linspace(Tin, Tout, 5)
+    h_s_w = np.zeros(5)
+    h_s_b = np.zeros(5)
+    s_s_w = np.zeros(5)
+    s_s_b = np.zeros(5)
+    for i, T in enumerate(t_s):
+        brine = partition.calc(brine, P, T)
+
+        water = properties.calc(water, P, T)
+        brine = properties.calc(brine, P, T)
+
+        h_s_w[i] = water.total.props.h
+        h_s_b[i] = brine.total.props.h
+
+        s_s_w[i] = water.total.props.s
+        s_s_b[i] = brine.total.props.s
+
+    h_s_w = h_s_w - h_s_w[-1]
+    h_s_b = h_s_b - h_s_b[-1]
+
+    s_s_w = s_s_w - s_s_w[-1]
+    s_s_b = s_s_b - s_s_b[-1]
+
+    plt.plot(h_s_w, t_s -273, label="Water")
+    plt.plot(h_s_b, t_s -273, label="Brine")
+    plt.legend()
+    plt.ylabel("Temperature, degC")
+    plt.xlabel("Enthalpy Change, kJ/kg")
+    plt.ylim((Tref+22 -273, Tin + 10-273))
+    plt.show()
+
+    plt.plot(s_s_w, t_s-273, label="Water")
+    plt.plot(s_s_b, t_s-273, label="Brine")
+    plt.legend()
+    plt.ylabel("Temperature, degC")
+    plt.xlabel("Entropy Change, kJ/kg/K")
+    plt.ylim((Tref+22-273, Tin+10-273))
+    plt.show()
+
+    print(h_s_w, h_s_b)
+    print(s_s_w, s_s_b)
+
+
