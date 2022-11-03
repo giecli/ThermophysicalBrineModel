@@ -259,39 +259,6 @@ class Fluid:
             newFluid.total.phases[phaseType].props = phases[phaseType].props.copy()
 
         newFluid._totalPhaseProps()
-        #
-        # # initialise the properties
-        # enthalpy = 0
-        # entropy = 0
-        # volume = 0
-        # P = 0
-        # T = 0
-        # for phaseType in phaseTypes:
-        #     # set the phase properties
-        #     newFluid.total.phases[phaseType].props = phases[phaseType].props.copy()
-        #
-        #     # calculate the cumulative properties
-        #     enthalpy += phases[phaseType].props["h"] * phases[phaseType].props["m"]
-        #     entropy += phases[phaseType].props["s"] * phases[phaseType].props["m"]
-        #     volume += phases[phaseType].props["m"] / (phases[phaseType].props["rho"] + 1e-6)
-        #
-        #     P = phases[phaseType].props["P"]
-        #     T = phases[phaseType].props["T"]
-        #
-        # # calculate the total phase properties
-        # total_mass = sum([newFluid.total.mass[i] for i in newFluid.total.mass])
-        # props = {}
-        # props["P"] = P
-        # props["T"] = T
-        # props["h"] = enthalpy / total_mass
-        # props["s"] = entropy / total_mass
-        # props["rho"] = total_mass / (volume + 1e-6)
-        # props["v"] = volume
-        # props["m"] = total_mass
-        # props["NotCalculated"] = self.total.props.NotCalculated
-        #
-        # newFluid.total.props = PhaseProperties(props)
-        # newFluid.total.props_calculated = True
 
         return newFluid
 
@@ -480,5 +447,21 @@ class Fluid:
         self.mineral = MineralPhase()
         self.element = ElementPhase()
 
+    def normaliseComposition(self):
 
+        components = [i for i in self.total.components]
+        mass_corr = 1 / sum([self.total.mass[i] for i in components])
 
+        self.total.mass = {i:self.total.mass[i]*mass_corr for i in components}
+        self.total.moles = {i:self.total.moles[i]*mass_corr for i in components}
+
+        if self.total.props_calculated:
+            self.total.props.m *= mass_corr
+
+        for phaseType in self.total.phases:
+            phase = self.total.phases[phaseType]
+            phase.mass = {i:phase.mass[i] * mass_corr for i in phase.components}
+            phase.moles = {i:phase.moles[i] * mass_corr for i in phase.components}
+
+            if self.total.props_calculated:
+                phase.props.m *= mass_corr

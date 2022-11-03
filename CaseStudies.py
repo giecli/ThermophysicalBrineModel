@@ -699,7 +699,7 @@ if __name__ == "__main_":
     plt.show()
 
 # real brine
-if __name__ == "__main__":
+if __name__ == "__main_":
 
     comp = [tppm.Comp.WATER,
             tppm.Comp.STEAM,

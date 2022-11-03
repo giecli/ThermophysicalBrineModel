@@ -3,7 +3,7 @@ from CoolPropPropertyModel import CoolPropProperties, CoolPropPropertyOptions
 from Fluid import Fluid
 from ErrorHandling import Error
 
-from Phases import PhaseProperties
+from Phases import PhaseProperties, PhaseType
 
 from enum import Enum
 from typing import List, Union, Dict, Tuple, NoReturn, Optional
@@ -109,46 +109,32 @@ class PropertyModel:
             fluid.mineral.props = PhaseProperties(props)
             fluid.mineral.props_calculated = True
 
-        # # init the total enthalpy, entropy, volume, mass and any components that could not be calculated
-        # # calculate the properties of the total phase
-        # enthalpy = 0
-        # entropy = 0
-        # volume = 0.
-        # mass = 0
-        # comp_not_calculated = []
-        # for phase in fluid.total.phases:
-        #     phase = fluid.total.phases[phase]
-        #     enthalpy += phase.props["h"] * phase.props["m"]
-        #     entropy += phase.props["s"] * phase.props["m"]
-        #     volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
-        #     mass += phase.props["m"]
-        #
-        #     if phase.props["NotCalculated"]:
-        #         comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
-        #
-        # # calculate the total mass
-        # total_mass = sum([fluid.total.mass[i] for i in fluid.total.mass])
-        #
-        # # check if the total mass from the composition is consistent with the mass of the components in phases
-        # if (total_mass - mass)/total_mass > 1e-3:
-        #     raise Error("The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass)/total_mass))
-        #
-        # # calculate the specific properties
-        # props = {"P": P,
-        #          "T": T,
-        #          "h": enthalpy / total_mass,
-        #          "s": entropy / total_mass,
-        #          "rho": total_mass / (volume + 1e-6),
-        #          "v": volume / total_mass,
-        #          "m": total_mass,
-        #          "NotCalculated": comp_not_calculated}
-        #
-        # fluid.total.props = PhaseProperties(props)
-        # fluid.total.props_calculated = True
-
-        # fluid = PhaseProperties._totalPhase(fluid)
-
         fluid._totalPhaseProps()
 
         return fluid
+
+    def calcChange(self, fluid, P1, T1, P2, T2, phaseType=PhaseType.TOTAL):
+
+        fluid = self.calc(fluid, P1, T1)
+        if phaseType == PhaseType.TOTAL:
+            props1 = fluid.total.props.copy()
+        else:
+            props1 = fluid.total.phases[phaseType].props.copy()
+
+        fluid = self.calc(fluid, P2, T2)
+        if phaseType == PhaseType.TOTAL:
+            props2 = fluid.total.props.copy()
+        else:
+            props2 = fluid.total.props[phaseType].props.copy()
+
+        props = props1.copy()
+        props.P -= props2.P
+        props.T -= props2.T
+        props.m -= props2.m
+        props.v -= props2.v
+        props.h -= props2.h
+        props.s -= props2.s
+        props.rho -= props2.rho
+
+        return props, props1, props2
 

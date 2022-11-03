@@ -109,52 +109,6 @@ class PhaseProperties:
 
         return PhaseProperties(newProps)
 
-    # @staticmethod
-    # def _totalPhase(fluid):
-    #     # init the total enthalpy, entropy, volume, mass and any components that could not be calculated
-    #     enthalpy = 0
-    #     entropy = 0
-    #     volume = 0.
-    #     mass = 0
-    #     comp_not_calculated = []
-    #
-    #     for phase in fluid.total.phases:
-    #         phase = fluid.total.phases[phase]
-    #         enthalpy += phase.props["h"] * phase.props["m"]
-    #         entropy += phase.props["s"] * phase.props["m"]
-    #         volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
-    #         mass += phase.props["m"]
-    #
-    #         P = phase.props["P"] * 1.0
-    #         T = phase.props["T"] * 1.0
-    #
-    #         if phase.props["NotCalculated"]:
-    #             comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
-    #
-    #     # calculate the total mass
-    #     total_mass = sum([fluid.total.mass[i] for i in fluid.total.mass])
-    #
-    #     # check if the total mass from the composition is consistent with the mass of the components in phases
-    #     if (total_mass - mass) / total_mass > 1e-3:
-    #         raise Error(
-    #             "The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass) / total_mass))
-    #
-    #     # calculate the specific properties
-    #     props = {"P": P,
-    #              "T": T,
-    #              "h": enthalpy / total_mass,
-    #              "s": entropy / total_mass,
-    #              "rho": total_mass / (volume + 1e-6),
-    #              "v": volume / total_mass,
-    #              "m": total_mass,
-    #              "NotCalculated": comp_not_calculated}
-    #
-    #     fluid.total.props = PhaseProperties(props)
-    #     fluid.total.props_calculated = True
-    #
-    #     return fluid
-    #
-
 class Phase:
     """
         The Phase class summarises components, compositions and properties of a phase

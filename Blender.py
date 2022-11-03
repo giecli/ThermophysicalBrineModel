@@ -72,27 +72,12 @@ class Blender:
         # if the properties were calculated for the same pressure and temperature, update the property results
         if fluid1.total.props_calculated and fluid2.total.props_calculated:
             if fluid1.total.props["P"] == fluid2.total.props["P"] and fluid1.total.props["T"] == fluid2.total.props["T"]:
-                props = {"P": fluid1.total.props["P"],
-                         "T": fluid1.total.props["T"],
-                         "h": (fluid1.total.props["m"] * fluid1.total.props["h"] + ratio2to1 * fluid2.total.props["m"] * fluid2.total.props["h"])/(fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]),
-                         "s": (fluid1.total.props["m"] * fluid1.total.props["s"] + ratio2to1 * fluid2.total.props["m"] * fluid2.total.props["s"]) / (fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]),
-                         "rho":  (fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]) / ((fluid1.total.props["m"] / (fluid1.total.props["rho"] + 1e-6) ) + (ratio2to1 * fluid2.total.props["m"] / (fluid2.total.props["rho"] + 1e-6))),
-                         "v": (fluid1.total.props["m"] * fluid1.total.props["v"] + ratio2to1 * fluid2.total.props["m"] * fluid2.total.props["v"])/(fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"]),
-                         "m": fluid1.total.props["m"] + ratio2to1 * fluid2.total.props["m"],
-                         "NotCalculated": fluid1.total.props["NotCalculated"] + fluid2.total.props["NotCalculated"]
-                         }
-
-                # create new phase properties
-                new_fluid.total.props = PhaseProperties(props)
-
-                # set flag
-                new_fluid.total.props_calculated = True
 
                 # repeat for all other phases
                 for phase in new_fluid.total.phases:
 
                     # check if the parent fluids share a given phase
-                    if phase in fluid1.total.phases and phase in fluid2.total.phases:
+                    if phase in fluid1.total.phases and phase in fluid2.total.phases and fluid1.total.phases[phase].props.m > 0 and fluid2.total.phases[phase].props.m > 0:
                         phase1 = fluid1.total.phases[phase]
                         phase2 = fluid2.total.phases[phase]
 
@@ -115,20 +100,20 @@ class Blender:
                                  "NotCalculated": not_calculated
                                  }
                     else:
-                        props = {"P": fluid1.total.props["P"],
-                                 "T": fluid1.total.props["T"]}
+                        props = {"P": fluid1.total.props["P"]*1.0,
+                                 "T": fluid1.total.props["T"]*1.0}
 
-                        if phase in fluid1.total.phases:
+                        if phase in fluid1.total.phases and fluid1.total.phases[phase].props.m > 0:
                             phase_ = fluid1.total.phases[phase]
-                            props["m"] = phase_.props["m"]
+                            props["m"] = phase_.props["m"]*1.0
                         else:
                             phase_ = fluid2.total.phases[phase]
                             props["m"] = phase_.props["m"]*ratio2to1
 
-                        props["h"] = phase_.props["h"]
-                        props["s"] = phase_.props["s"]
-                        props["rho"] = phase_.props["rho"]
-                        props["v"] = phase_.props["v"]
+                        props["h"] = phase_.props["h"]*1.0
+                        props["s"] = phase_.props["s"]*1.0
+                        props["rho"] = phase_.props["rho"]*1.0
+                        props["v"] = phase_.props["v"]*1.0
                         props["NotCalculated"] = phase_.props["NotCalculated"]
 
                     # create new phase properties
@@ -137,5 +122,10 @@ class Blender:
                     # set flag
                     new_fluid.total.phases[phase].props_calculated = True
 
+                new_fluid._totalPhaseProps()
+
         # return the new fluid
         return new_fluid
+
+
+
