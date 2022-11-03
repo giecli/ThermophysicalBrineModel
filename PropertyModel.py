@@ -91,8 +91,6 @@ class PropertyModel:
                 the calculated fluid
         """
 
-
-
         # trigger the property calculations for the aqueous phase
         if fluid.aqueous.components:
             props = PropertyModels.THERMOFUN.value.calc(fluid.aqueous, P, T, self.options.ThermoFun)
@@ -111,41 +109,46 @@ class PropertyModel:
             fluid.mineral.props = PhaseProperties(props)
             fluid.mineral.props_calculated = True
 
-        # calculate the properties of the total phase
-        # init the total enthalpy, entropy, volume, mass and any components that could not be calculated
-        enthalpy = 0
-        entropy = 0
-        volume = 0.
-        mass = 0
-        comp_not_calculated = []
-        for phase in fluid.total.phases:
-            phase = fluid.total.phases[phase]
-            enthalpy += phase.props["h"] * phase.props["m"]
-            entropy += phase.props["s"] * phase.props["m"]
-            volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
-            mass += phase.props["m"]
+        # # init the total enthalpy, entropy, volume, mass and any components that could not be calculated
+        # # calculate the properties of the total phase
+        # enthalpy = 0
+        # entropy = 0
+        # volume = 0.
+        # mass = 0
+        # comp_not_calculated = []
+        # for phase in fluid.total.phases:
+        #     phase = fluid.total.phases[phase]
+        #     enthalpy += phase.props["h"] * phase.props["m"]
+        #     entropy += phase.props["s"] * phase.props["m"]
+        #     volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
+        #     mass += phase.props["m"]
+        #
+        #     if phase.props["NotCalculated"]:
+        #         comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
+        #
+        # # calculate the total mass
+        # total_mass = sum([fluid.total.mass[i] for i in fluid.total.mass])
+        #
+        # # check if the total mass from the composition is consistent with the mass of the components in phases
+        # if (total_mass - mass)/total_mass > 1e-3:
+        #     raise Error("The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass)/total_mass))
+        #
+        # # calculate the specific properties
+        # props = {"P": P,
+        #          "T": T,
+        #          "h": enthalpy / total_mass,
+        #          "s": entropy / total_mass,
+        #          "rho": total_mass / (volume + 1e-6),
+        #          "v": volume / total_mass,
+        #          "m": total_mass,
+        #          "NotCalculated": comp_not_calculated}
+        #
+        # fluid.total.props = PhaseProperties(props)
+        # fluid.total.props_calculated = True
 
-            if phase.props["NotCalculated"]:
-                comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
+        # fluid = PhaseProperties._totalPhase(fluid)
 
-        # calculate the total mass
-        total_mass = sum([fluid.total.mass[i] for i in fluid.total.mass])
-
-        # check if the total mass from the composition is consistent with the mass of the components in phases
-        if (total_mass - mass)/total_mass > 1e-3:
-            raise Error("The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass)/total_mass))
-
-        # calculate the specific properties
-        props = {"P": P,
-                 "T": T,
-                 "h": enthalpy / total_mass,
-                 "s": entropy / total_mass,
-                 "rho": total_mass / (volume + 1e-6),
-                 "v": volume / total_mass,
-                 "m": total_mass,
-                 "NotCalculated": comp_not_calculated}
-
-        fluid.total.props = PhaseProperties(props)
-        fluid.total.props_calculated = True
+        fluid._totalPhaseProps()
 
         return fluid
+

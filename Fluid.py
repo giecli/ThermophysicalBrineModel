@@ -198,37 +198,26 @@ class Fluid:
 
         # check if the phase is the total phase
         if phaseType == PhaseType.TOTAL:
-            components = [i for i in self.total.components]  # this is an alternative to copy.deepcopy as that does not seem to work with Enums...
-            composition = [self.total.mass[i] for i in components]
-            props = self.total.props
+            phase = self.total
         else:
-            # get the phase, the components and the composition
             phase = self.total.phases[phaseType]
-            components = [i for i in phase.components]  # this is an alternative to copy.deepcopy as that does not seem to work with Enums...
-            composition = [phase.mass[i] for i in components]  # this is an alternative to copy.deepcopy as that does not seem to work with Enums...
-            props = phase.props
 
-        # this is a hack because I cannot properly copy the Properties object... urrgh
-        new_props = {}
-        if props.NotCalculated is not None:
-            new_props["NotCalculated"] = [i for i in props.NotCalculated]
-        else:
-            new_props["NotCalculated"] = None
-        new_props["P"] = props.P * 1.0
-        new_props["T"] = props.T * 1.0
-        new_props["h"] = props.h * 1.0
-        new_props["rho"] = props.rho * 1.0
-        new_props["s"] = props.s * 1.0
-        new_props["v"] = props.v * 1.0
+        components = [i for i in phase.components]
+        composition = [phase.mass[i] * 1.0 for i in components]
+        props = phase.props.copy()
 
         # create the new fluid from the components and composition
         newFluid = Fluid(components=components, composition=composition)
 
         # set the total and phase properties
-        newFluid.total.props = new_props
+        newFluid.total.props = props
+        if self.total.props_calculated:
+            newFluid.total.props_calculated = True
+        else:
+            newFluid.total.props_calculated = False
 
         if phaseType != PhaseType.TOTAL:
-            newFluid.total.phases[phaseType].props = new_props
+            newFluid.total.phases[phaseType].props = props
 
         return newFluid
 
@@ -265,51 +254,92 @@ class Fluid:
         # create the new fluid from the components and composition
         newFluid = Fluid(components=components, composition=composition)
 
-        # initialise the properties
-        enthalpy = 0
-        entropy = 0
-        volume = 0
-        P = 0
-        T = 0
         for phaseType in phaseTypes:
             # set the phase properties
-            newFluid.total.phases[phaseType].props = copy.deepcopy(phases[phaseType].props)
+            newFluid.total.phases[phaseType].props = phases[phaseType].props.copy()
 
-            # calculate the cumulative properties
-            enthalpy += phases[phaseType].props["h"] * phases[phaseType].props["m"]
-            entropy += phases[phaseType].props["s"] * phases[phaseType].props["m"]
-            volume += phases[phaseType].props["m"] / (phases[phaseType].props["rho"] + 1e-6)
-
-            P = phases[phaseType].props["P"]
-            T = phases[phaseType].props["T"]
-
-        # calculate the total phase properties
-        total_mass = sum([newFluid.total.mass[i] for i in newFluid.total.mass])
-        props = {}
-        props["P"] = P
-        props["T"] = T
-        props["h"] = enthalpy / total_mass
-        props["s"] = entropy / total_mass
-        props["rho"] = total_mass / (volume + 1e-6)
-        props["v"] = volume
-        props["m"] = total_mass
-        props["NotCalculated"] = self.total.props.NotCalculated
-
-        newFluid.total.props = PhaseProperties(props)
-        newFluid.total.props_calculated = True
-
-        # newFluid.total.props["P"] = P
-        # newFluid.total.props["T"] = T
-        # newFluid.total.props["h"] = enthalpy / total_mass
-        # newFluid.total.props["s"] = entropy / total_mass
-        # newFluid.total.props["rho"] = total_mass / (volume + 1e-6)
-        # newFluid.total.props["m"] = total_mass
+        newFluid._totalPhaseProps()
+        #
+        # # initialise the properties
+        # enthalpy = 0
+        # entropy = 0
+        # volume = 0
+        # P = 0
+        # T = 0
+        # for phaseType in phaseTypes:
+        #     # set the phase properties
+        #     newFluid.total.phases[phaseType].props = phases[phaseType].props.copy()
+        #
+        #     # calculate the cumulative properties
+        #     enthalpy += phases[phaseType].props["h"] * phases[phaseType].props["m"]
+        #     entropy += phases[phaseType].props["s"] * phases[phaseType].props["m"]
+        #     volume += phases[phaseType].props["m"] / (phases[phaseType].props["rho"] + 1e-6)
+        #
+        #     P = phases[phaseType].props["P"]
+        #     T = phases[phaseType].props["T"]
+        #
+        # # calculate the total phase properties
+        # total_mass = sum([newFluid.total.mass[i] for i in newFluid.total.mass])
+        # props = {}
+        # props["P"] = P
+        # props["T"] = T
+        # props["h"] = enthalpy / total_mass
+        # props["s"] = entropy / total_mass
+        # props["rho"] = total_mass / (volume + 1e-6)
+        # props["v"] = volume
+        # props["m"] = total_mass
+        # props["NotCalculated"] = self.total.props.NotCalculated
+        #
+        # newFluid.total.props = PhaseProperties(props)
+        # newFluid.total.props_calculated = True
 
         return newFluid
 
     def copy(self):
         phases = self.total.phases
         return self.promotePhasesToFluid(phases)
+
+    def _totalPhaseProps(self):
+        # init the total enthalpy, entropy, volume, mass and any components that could not be calculated
+        enthalpy = 0
+        entropy = 0
+        volume = 0.
+        mass = 0
+        comp_not_calculated = []
+
+        for phase in self.total.phases:
+            phase = self.total.phases[phase]
+            enthalpy += phase.props["h"] * phase.props["m"]
+            entropy += phase.props["s"] * phase.props["m"]
+            volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
+            mass += phase.props["m"]
+
+            P = phase.props["P"] * 1.0
+            T = phase.props["T"] * 1.0
+
+            if phase.props["NotCalculated"]:
+                comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
+
+        # calculate the total mass
+        total_mass = sum([self.total.mass[i] for i in self.total.mass])
+
+        # check if the total mass from the composition is consistent with the mass of the components in phases
+        if (total_mass - mass) / total_mass > 1e-3:
+            raise Error(
+                "The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass) / total_mass))
+
+        # calculate the specific properties
+        props = {"P": P,
+                 "T": T,
+                 "h": enthalpy / total_mass,
+                 "s": entropy / total_mass,
+                 "rho": total_mass / (volume + 1e-6),
+                 "v": volume / total_mass,
+                 "m": total_mass,
+                 "NotCalculated": comp_not_calculated}
+
+        self.total.props = PhaseProperties(props)
+        self.total.props_calculated = True
 
     def __str__(self) -> str:
         """

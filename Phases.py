@@ -1,3 +1,4 @@
+from ErrorHandling import Error
 
 from enum import Enum
 from typing import List, Union, Dict, Tuple, NoReturn, Optional
@@ -32,17 +33,18 @@ class PhaseProperties:
             the phase specific entropy in kJ/kg/K
         rho: int, float
             the phase density in kg/m3
+        v: int, float
+            the phase specific volume in m3/kg
         m: int, float
             the total mass of this phase
+        NotCalculated: List
+            list of components that could not be calculated
 
         Methods
         -------
         __init__(phase_type, props)
         __getitem__(item)
         __str__()
-
-        # TODO would be nice to output the volume as well
-
     """
 
     def __init__(self, props):
@@ -95,6 +97,63 @@ class PhaseProperties:
 
         return text
 
+    def copy(self):
+
+        newProps = {"P": 0.0, "T": 0.0, "h": 0.0, "s": 0.0, "rho": 0.0, "m": 0.0, "v":0.0}
+        newProps = {i: self[i]*1.0 for i in newProps}
+
+        if self.NotCalculated:
+            newProps["NotCalculated"] = [i for i in self.NotCalculated]
+        else:
+            newProps["NotCalculated"] = None
+
+        return PhaseProperties(newProps)
+
+    # @staticmethod
+    # def _totalPhase(fluid):
+    #     # init the total enthalpy, entropy, volume, mass and any components that could not be calculated
+    #     enthalpy = 0
+    #     entropy = 0
+    #     volume = 0.
+    #     mass = 0
+    #     comp_not_calculated = []
+    #
+    #     for phase in fluid.total.phases:
+    #         phase = fluid.total.phases[phase]
+    #         enthalpy += phase.props["h"] * phase.props["m"]
+    #         entropy += phase.props["s"] * phase.props["m"]
+    #         volume += phase.props["m"] / (phase.props["rho"] + 1e-6)
+    #         mass += phase.props["m"]
+    #
+    #         P = phase.props["P"] * 1.0
+    #         T = phase.props["T"] * 1.0
+    #
+    #         if phase.props["NotCalculated"]:
+    #             comp_not_calculated = comp_not_calculated + phase.props["NotCalculated"]
+    #
+    #     # calculate the total mass
+    #     total_mass = sum([fluid.total.mass[i] for i in fluid.total.mass])
+    #
+    #     # check if the total mass from the composition is consistent with the mass of the components in phases
+    #     if (total_mass - mass) / total_mass > 1e-3:
+    #         raise Error(
+    #             "The calculation has lost mass. Current loss: {} %".format(100 * (total_mass - mass) / total_mass))
+    #
+    #     # calculate the specific properties
+    #     props = {"P": P,
+    #              "T": T,
+    #              "h": enthalpy / total_mass,
+    #              "s": entropy / total_mass,
+    #              "rho": total_mass / (volume + 1e-6),
+    #              "v": volume / total_mass,
+    #              "m": total_mass,
+    #              "NotCalculated": comp_not_calculated}
+    #
+    #     fluid.total.props = PhaseProperties(props)
+    #     fluid.total.props_calculated = True
+    #
+    #     return fluid
+    #
 
 class Phase:
     """
