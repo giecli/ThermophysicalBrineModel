@@ -115,20 +115,21 @@ class Blender:
                                  "NotCalculated": not_calculated
                                  }
                     else:
+                        props = {"P": fluid1.total.props["P"],
+                                 "T": fluid1.total.props["T"]}
+
                         if phase in fluid1.total.phases:
                             phase_ = fluid1.total.phases[phase]
+                            props["m"] = phase_.props["m"]
                         else:
                             phase_ = fluid2.total.phases[phase]
+                            props["m"] = phase_.props["m"]*ratio2to1
 
-                        props = {"P": fluid1.total.props["P"],
-                                 "T": fluid1.total.props["T"],
-                                 "h": phase_.props["h"],
-                                 "s": phase_.props["s"],
-                                 "rho": phase_.props["rho"],
-                                 "v": phase_.props["v"],
-                                 "m": phase_.props["m"],
-                                 "NotCalculated": phase_.props["NotCalculated"]
-                                 }
+                        props["h"] = phase_.props["h"]
+                        props["s"] = phase_.props["s"]
+                        props["rho"] = phase_.props["rho"]
+                        props["v"] = phase_.props["v"]
+                        props["NotCalculated"] = phase_.props["NotCalculated"]
 
                     # create new phase properties
                     new_fluid.total.phases[phase].props = PhaseProperties(props)

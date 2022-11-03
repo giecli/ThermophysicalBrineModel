@@ -200,22 +200,35 @@ class Fluid:
         if phaseType == PhaseType.TOTAL:
             components = [i for i in self.total.components]  # this is an alternative to copy.deepcopy as that does not seem to work with Enums...
             composition = [self.total.mass[i] for i in components]
-            props = copy.deepcopy(self.total.props)
+            props = self.total.props
         else:
             # get the phase, the components and the composition
             phase = self.total.phases[phaseType]
             components = [i for i in phase.components]  # this is an alternative to copy.deepcopy as that does not seem to work with Enums...
             composition = [phase.mass[i] for i in components]  # this is an alternative to copy.deepcopy as that does not seem to work with Enums...
-            props = copy.deepcopy(phase.props)
+            props = phase.props
+
+        # this is a hack because I cannot properly copy the Properties object... urrgh
+        new_props = {}
+        if props.NotCalculated is not None:
+            new_props["NotCalculated"] = [i for i in props.NotCalculated]
+        else:
+            new_props["NotCalculated"] = None
+        new_props["P"] = props.P * 1.0
+        new_props["T"] = props.T * 1.0
+        new_props["h"] = props.h * 1.0
+        new_props["rho"] = props.rho * 1.0
+        new_props["s"] = props.s * 1.0
+        new_props["v"] = props.v * 1.0
 
         # create the new fluid from the components and composition
         newFluid = Fluid(components=components, composition=composition)
 
         # set the total and phase properties
-        newFluid.total.props = props
+        newFluid.total.props = new_props
 
         if phaseType != PhaseType.TOTAL:
-            newFluid.total.phases[phaseType].props = copy.deepcopy(self.total.phases[phaseType].props)
+            newFluid.total.phases[phaseType].props = new_props
 
         return newFluid
 

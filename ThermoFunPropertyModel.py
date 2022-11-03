@@ -120,7 +120,7 @@ class ThermoFunProperties:
         # initialise the ThermoFun database
         database = options.databaseHomeDir + "/" + options.database.value
 
-        # initialise the ThermoFun calculation enginer
+        # initialise the ThermoFun calculation engineer
         engine = fun.ThermoEngine(database)
 
         # initialise the property calculation results

@@ -10,6 +10,8 @@ class Comp(Enum):
     The Comp class stores all of the available species.
     """
 
+    # TODO the use of Enums with classes as the value is proving a huge pain in the arse!!! Need to think of a better way!!
+
     # these species exist in both CoolProp and Reaktoro
 
     STEAM = Species("H2O(g)", "Water", ["H", "O"], 0.01801528, +0, PhaseType.GASEOUS)
