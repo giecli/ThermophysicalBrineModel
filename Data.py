@@ -53,3 +53,30 @@ class Mass(Unit):
     def __init__(self, name, U2SI=(0, 1)):
         dimensions = {BaseDimensions.M: 1}
         super().__init__(name, dimensions, U2SI)
+
+
+class Pressure(Unit):
+
+    def __init__(self, name, U2SI=(0, 1)):
+        dimensions = {BaseDimensions.M: 1, BaseDimensions.L: -1, BaseDimensions.t: -2}
+        super().__init__(name, dimensions, U2SI)
+
+
+class Temperature(Unit):
+
+    def __init__(self, name, U2SI=(0, 1)):
+        dimensions = {BaseDimensions.T:1}
+        super().__init__(name, dimensions, U2SI)
+
+
+class dTemperature(Unit):
+
+    def __init__(self, name, U2SI=(0, 1)):
+
+        dimensions = {BaseDimensions.T:1}
+        super().__init__(name, dimensions, U2SI)
+
+
+Pa = Pressure("Pa")
+BARa = Pressure("Bar", U2SI=(0, 1e5))
+

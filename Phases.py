@@ -37,7 +37,7 @@ class PhaseProperties:
             the phase specific volume in m3/kg
         m: int, float
             the total mass of this phase
-        NotCalculated: List
+        NotCalculated: list
             list of components that could not be calculated
 
         Methods
@@ -57,12 +57,17 @@ class PhaseProperties:
                 dictionary of the fluid properties
 
         """
+        props0 = {"P": 0, "T": 0, "h": 0, "s": 0, "rho": 0, "v": 0, "m": 0, "NotCalculated": []}
+
+        for i in props:
+            props0[i] = props[i]
+
         # creates a variable for each of the items in props
-        vars = (i for i in props)  # plus plenty more
+        vars = (i for i in props0)  # plus plenty more
 
         # assigns the value to each property
         for i in vars:
-            setattr(self, i, props[i])
+            setattr(self, i, props0[i])
 
     def __getitem__(self, item: str):
         """

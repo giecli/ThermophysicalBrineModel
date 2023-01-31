@@ -100,7 +100,7 @@ if __name__ == "__main_":
     print(reservoir.total.props.h - surface.total.props.h)
 
 # CoolProp Seawater comparison
-if __name__ == "__main_":
+if __name__ == "__main__":
 
     sal = 0.1
     comp = [tppm.Comp.WATER, tppm.Comp.Halite]

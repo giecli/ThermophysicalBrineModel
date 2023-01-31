@@ -8,6 +8,7 @@ from enum import Enum
 from typing import List, Union, Dict, Tuple, NoReturn, Optional
 import time
 
+
 def initFromElements(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.AqueousPhase, rkt.MineralPhase, str]:
     """
         initialises the partition species from elements
@@ -45,28 +46,35 @@ def initFromElements(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueo
     # create a gaseous phase of all possible species from the given elements
     gaseous = rkt.GaseousPhase(rkt.speciate(elements))
 
+    # TODO urrrgh cannot currently set the activity model... back to the drawing board... ffs
     # set the activity model if the phase has any species
-    if gaseous.species():
+    if gaseous.elements():
         gaseous.setActivityModel(options.gaseousActivityModel.value())
 
     # create an aqueous phase of all possible species from the given elements
-    aqueous = rkt.AqueousPhase(rkt.speciate(elements))
+    aqueous = rkt.AqueousPhase(rkt.speciate(elements), rkt.exclude("organic"))
+    # aqueous = rkt.AqueousPhase(elements)
 
     # set the activity model if the phase has any species
-    if aqueous.species():
+    if aqueous.elements():
         aqueous.setActivityModel(options.aqueousActivityModel.value())
 
         # set a CO2 specific activity model
         if options.aqueousCO2ActivityModel.value is not None:
             if "C" in fluid.total.elements and "O" in fluid.total.elements:
-                aqueous.setActivityModel(rkt.chain(options.aqueousActivityModel.value(),
-                                                   options.aqueousCO2ActivityModel.value("CO2")))
+                if options.aqueousActivityModel == options.AqueousActivityModels.IDEAL:
+                # cannot use the Ideal model with the CO2 activity models? - check with Alan
+                    aqueous.setActivityModel(rkt.chain(options.AqueousActivityModels.HKF.value(),
+                                                       options.aqueousCO2ActivityModel.value(("CO2"))))
+                else:
+                    aqueous.setActivityModel(rkt.chain(options.aqueousActivityModel.value(),
+                                                       options.aqueousCO2ActivityModel.value(("CO2"))))
 
     # create a mineral phase of all possible species from the given elements
     mineral = rkt.MineralPhases(rkt.speciate(elements))
 
     # set the activity model if the phase has any species
-    if mineral.species():
+    if options.mineralActivityModel != ReaktoroPartitionOptions.MineralActivityModels.IDEAL:
         mineral.setActivityModel(options.mineralActivityModel.value())
 
     return gaseous, aqueous, mineral, elements
@@ -157,10 +165,11 @@ def initFromSpecies(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueou
 
         # populate the mineral phase with species and apply the selected activity model
         mineral = rkt.MineralPhases(mineral_str)
-        if options.mineralActivityModel == ReaktoroPartitionOptions.MineralActivityModels.IDEAL:
-            mineral.setActivityModel(options.mineralActivityModel.value(rkt.StateOfMatter.Solid))
-        else:
-            mineral.setActivityModel(options.mineralActivityModel.value())
+        # TODO need to fix the below
+        # if options.mineralActivityModel == ReaktoroPartitionOptions.MineralActivityModels.IDEAL:
+        #     mineral.setActivityModel(options.mineralActivityModel.value(rkt.StateOfMatter.Solid))
+        # else:
+        #     mineral.setActivityModel(options.mineralActivityModel.value())
 
     return gaseous, aqueous, mineral, elements
 
@@ -259,7 +268,7 @@ class ReaktoroPartitionOptions:
         """
             The MineralActivityModels class contains links to all the activity models that can be used for the mineral phase
         """
-        IDEAL = rkt.ActivityModelIdealSolution
+        IDEAL = rkt.ActivityModelIdealAqueous()
         REDLICH_KISTER = rkt.ActivityModelRedlichKister
 
     def __init__(self):
