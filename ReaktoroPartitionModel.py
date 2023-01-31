@@ -46,13 +46,12 @@ def initFromElements(fluid: Fluid, options) -> Tuple[rkt.GaseousPhase, rkt.Aqueo
     # create a gaseous phase of all possible species from the given elements
     gaseous = rkt.GaseousPhase(rkt.speciate(elements))
 
-    # TODO urrrgh cannot currently set the activity model... back to the drawing board... ffs
     # set the activity model if the phase has any species
     if gaseous.elements():
         gaseous.setActivityModel(options.gaseousActivityModel.value())
 
     # create an aqueous phase of all possible species from the given elements
-    aqueous = rkt.AqueousPhase(rkt.speciate(elements), rkt.exclude("organic"))
+    aqueous = rkt.AqueousPhase(rkt.speciate(elements), rkt.exclude("organics"))
     # aqueous = rkt.AqueousPhase(elements)
 
     # set the activity model if the phase has any species

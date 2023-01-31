@@ -100,7 +100,7 @@ if __name__ == "__main_":
     print(reservoir.total.props.h - surface.total.props.h)
 
 # CoolProp Seawater comparison
-if __name__ == "__main__":
+if __name__ == "__main_":
 
     sal = 0.1
     comp = [tppm.Comp.WATER, tppm.Comp.Halite]
@@ -857,7 +857,11 @@ if __name__ == "__main_":
     P = 101325  # in Pa
     T = 350  # in K
 
-    brine = Partition().calc(brine, P, T)
+    partition = Partition()
+    # partition.options.Reaktoro.gaseousActivityModel = partition.options.Reaktoro.GaseousActivityModels.VAN_DER_WAALS
+
+    brine = partition.calc(brine, P, T)
+    # brine = Partition().calc(brine, P, T)
     brine = PropertyModel().calc(brine, P, T)
 
     print(brine)
@@ -922,3 +926,31 @@ if __name__ == "__main_":
     print(s_s_w, s_s_b)
 
 
+# testing whether the rkt.exclude("organics") actually works - it does, shut up haha
+if __name__ == "__main_":
+    import reaktoro as rkt
+
+    db = rkt.SupcrtDatabase('supcrtbl')
+
+    elements = 'C H Na O Cl'
+
+    gaseous = rkt.GaseousPhase(rkt.speciate(elements))
+    aqueous = rkt.AqueousPhase(rkt.speciate(elements), rkt.exclude("organic"))
+    mineral = rkt.MineralPhases(rkt.speciate(elements))
+
+    system = rkt.ChemicalSystem(db, aqueous, gaseous, mineral)
+    mix = rkt.Material(system)
+
+    mix.add("H2O(aq)", 1, "kg")
+    mix.add("NaCl(aq)", 0.1, "kg")
+    mix.add("CO2(g)", 0.02, "kg")
+
+    P = 101325
+    T = 350
+
+    state = mix.equilibrate(T, "K", P, "Pa")
+    res = mix.result()
+
+    assert res.optima.succeeded
+
+    state.output("debugging.txt")
